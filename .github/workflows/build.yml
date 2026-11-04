@@ -1,0 +1,82 @@
+name: Camera diagnostic APK
+
+on:
+  push:
+    branches:
+      - arena/0fe2a630-night-vision
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/0fe2a630-night-vision
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build and run unit tests
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest --stacktrace 2>&1 | tee build-output.log
+
+      - name: Run Android lint
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:lintDebug --stacktrace 2>&1 | tee -a build-output.log
+
+      - name: Preserve failure log for restricted build environments
+        if: failure()
+        run: |
+          mkdir -p artifacts
+          cp build-output.log artifacts/build-failure.log
+          git config user.name 'arena-build[bot]'
+          git config user.email 'arena-build[bot]@users.noreply.github.com'
+          git add artifacts/build-failure.log
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m '[skip ci] Preserve camera diagnostic build failure log'
+          git push origin HEAD:arena/0fe2a630-night-vision
+
+      - name: Verify APK metadata
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          AAPT=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt | sort -V | tail -n 1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)
+          "$AAPT" dump badging "$APK" | head -n 12
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: night-vision-camera-diagnostics
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.html
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish requested debug APK to this working branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/night-vision-x-pro-camera-diagnostics-debug.apk
+          git config user.name 'arena-build[bot]'
+          git config user.email 'arena-build[bot]@users.noreply.github.com'
+          git add artifacts/night-vision-x-pro-camera-diagnostics-debug.apk
+          if git diff --cached --quiet; then
+            echo 'APK is unchanged.'
+            exit 0
+          fi
+          git commit -m '[skip ci] Build camera diagnostic debug APK'
+          git push origin HEAD:arena/0fe2a630-night-vision
