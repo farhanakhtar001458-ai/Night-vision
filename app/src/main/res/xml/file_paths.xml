@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Documentation only: ReportFileProvider enforces cacheDir/reports directly in code. -->
+<paths>
+    <cache-path name="reports" path="reports/" />
+</paths>

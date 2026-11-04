@@ -1,0 +1,27 @@
+# Gradle / Android
+.gradle/
+**/build/
+local.properties
+.cxx/
+.externalNativeBuild/
+
+# IDE files (not required by the Termux build)
+.idea/
+*.iml
+.vscode/
+
+# Local signing material
+*.jks
+*.keystore
+keystore.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sandbox-only build toolchain and downloaded artifacts
+.tooling/
+
+# Generated on-device diagnostic reports
+reports/device-*.json
+reports/device-*.txt

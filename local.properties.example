@@ -1,0 +1,3 @@
+# Copy to local.properties only if ANDROID_HOME / ANDROID_SDK_ROOT is not exported.
+# Use the SDK path on YOUR Termux installation. local.properties is Git-ignored.
+sdk.dir=/data/data/com.termux/files/home/android-sdk
