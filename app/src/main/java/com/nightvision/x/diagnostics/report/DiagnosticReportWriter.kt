@@ -1,17 +1,13 @@
 package com.nightvision.x.diagnostics.report
 
-import android.graphics.ImageFormat
 import com.nightvision.x.diagnostics.data.CameraDiagnostic
 import com.nightvision.x.diagnostics.data.CameraValueFormatter
 import com.nightvision.x.diagnostics.data.DiagnosticReport
-import com.nightvision.x.diagnostics.data.ExposureRangeInfo
 import com.nightvision.x.diagnostics.data.IntRangeInfo
 import com.nightvision.x.diagnostics.data.OutputFormatInfo
 import com.nightvision.x.diagnostics.data.SizeInfo
-import com.nightvision.x.diagnostics.data.SizeInfoFloat
 import com.nightvision.x.diagnostics.data.SizeWithDuration
 import java.time.Instant
-import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
