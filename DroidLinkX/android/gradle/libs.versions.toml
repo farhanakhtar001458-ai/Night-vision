@@ -25,6 +25,7 @@ mockk = "1.14.2"
 appcompat = "1.7.1"
 splashscreen = "1.0.1"
 wearNo = "0"
+webrtcAndroid = "125.6422.07"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -50,6 +51,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
+webrtc-android = { module = "io.github.webrtc-sdk:android", version.ref = "webrtcAndroid" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 hilt-work = { module = "androidx.hilt:hilt-work", version = "1.2.0" }

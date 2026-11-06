@@ -21,6 +21,20 @@ android {
         buildConfigField("String", "DEFAULT_API_BASE_URL", "\"https://api.droidlinkx.local/\"")
     }
 
+    // Release signing is opt-in: pass -Pdroidlinkx.release.storeFile=... (plus password/alias) or
+    // the release build falls back to the debug key so `assembleRelease` never breaks.
+    val releaseStoreFile = providers.gradleProperty("droidlinkx.release.storeFile").orNull
+    signingConfigs {
+        if (!releaseStoreFile.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = providers.gradleProperty("droidlinkx.release.storePassword").orNull
+                keyAlias = providers.gradleProperty("droidlinkx.release.keyAlias").orNull
+                keyPassword = providers.gradleProperty("droidlinkx.release.keyPassword").orNull
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -28,6 +42,7 @@ android {
             buildConfigField("String", "DEFAULT_API_BASE_URL", "\"http://10.0.2.2:8080/\"")
         }
         release {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -59,6 +74,7 @@ dependencies {
     implementation(project(":feature:devices"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:transfers"))
+    implementation(project(":feature:tools"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

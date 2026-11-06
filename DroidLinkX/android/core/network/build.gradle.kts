@@ -29,8 +29,14 @@ fun gradleProperty(name: String, envName: String): String =
         ?: System.getenv(envName)?.takeIf { it.isNotBlank() }
         ?: ""
 
-fun supabaseUrl(): String = gradleProperty("droidlinkx.supabase.url", "SUPABASE_URL")
-fun supabaseAnonKey(): String = gradleProperty("droidlinkx.supabase.anonKey", "SUPABASE_ANON_KEY")
+// Public project coordinates. The anon key is designed to be shipped inside clients: Row Level
+// Security decides what a caller may read or write. The service_role key never appears here.
+val defaultSupabaseUrl = "https://zarxnrkzdwnjiauybghl.supabase.co"
+val defaultSupabaseAnonKey =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inphcnhucmt6ZHduamlhdXliZ2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NzQ1OTUsImV4cCI6MjEwODM1MDU5NX0.dcdHLqwF75YfEOTT2H9Vw-MN0Sr1UzIOzoGYTaB7r2s"
+
+fun supabaseUrl(): String = gradleProperty("droidlinkx.supabase.url", "SUPABASE_URL").ifBlank { defaultSupabaseUrl }
+fun supabaseAnonKey(): String = gradleProperty("droidlinkx.supabase.anonKey", "SUPABASE_ANON_KEY").ifBlank { defaultSupabaseAnonKey }
 fun signalingUrl(): String = gradleProperty("droidlinkx.signaling.url", "SIGNALING_URL")
 
 dependencies {

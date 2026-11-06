@@ -142,3 +142,38 @@ interface SupabaseStorageApi {
         @Query("select") select: String = "size",
     ): ResponseBody
 }
+
+/** Notification sharing and phone-to-phone signalling (Phase 5 additions). */
+interface SupabaseToolsApi {
+    @Headers("Prefer: resolution=ignore-duplicates,return=minimal")
+    @POST("rest/v1/notification_records")
+    suspend fun insertNotifications(
+        @Query("on_conflict") onConflict: String = "device_id,external_key",
+        @Body rows: List<SupabaseNotificationInsert>,
+    )
+
+    @GET("rest/v1/notification_records?select=id,device_id,package_name,app_name,title,content,category,is_sensitive,posted_at&order=posted_at.asc&limit=100")
+    suspend fun notificationsSince(
+        @Query("posted_at") postedAfter: String,
+        @Query("device_id") notDevice: String,
+    ): List<SupabaseNotificationRow>
+
+    @POST("rest/v1/rtc_signals")
+    suspend fun insertSignal(@Body signal: SupabaseRtcSignalInsert)
+
+    @GET("rest/v1/rtc_signals?select=id,connection_id,device_id,sender,kind,payload,created_at&order=created_at.asc&limit=50")
+    suspend fun signalsFrom(
+        @Query("connection_id") connection: String,
+        @Query("sender") sender: String,
+        @Query("created_at") createdAfter: String,
+    ): List<SupabaseRtcSignalRow>
+
+    @GET("rest/v1/rtc_signals?select=id,connection_id,device_id,sender,kind,payload,created_at&kind=eq.request&order=created_at.asc&limit=10")
+    suspend fun shareRequests(
+        @Query("device_id") device: String,
+        @Query("created_at") createdAfter: String,
+    ): List<SupabaseRtcSignalRow>
+
+    @DELETE("rest/v1/rtc_signals")
+    suspend fun deleteSignals(@Query("connection_id") connection: String)
+}

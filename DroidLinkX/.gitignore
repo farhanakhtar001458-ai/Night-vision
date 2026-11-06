@@ -32,3 +32,4 @@ android/captures/
 Thumbs.db
 *.swp
 .vscode/
+dist-min/

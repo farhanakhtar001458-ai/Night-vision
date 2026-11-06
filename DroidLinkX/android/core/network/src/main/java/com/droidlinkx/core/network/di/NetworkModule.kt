@@ -14,6 +14,7 @@ import com.droidlinkx.core.network.supabase.SupabaseOwnerApi
 import com.droidlinkx.core.network.supabase.SupabasePublicApi
 import com.droidlinkx.core.network.supabase.SupabaseRestApi
 import com.droidlinkx.core.network.supabase.SupabaseStorageApi
+import com.droidlinkx.core.network.supabase.SupabaseToolsApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -233,6 +234,12 @@ object NetworkModule {
     @Singleton
     fun provideSupabaseStorage(@SupabaseOwnerRetrofit retrofit: Retrofit): SupabaseStorageApi =
         retrofit.create(SupabaseStorageApi::class.java)
+
+    /** Notification sharing + in-app signalling; owner-scoped, RLS protected. */
+    @Provides
+    @Singleton
+    fun provideSupabaseTools(@SupabaseOwnerRetrofit retrofit: Retrofit): SupabaseToolsApi =
+        retrofit.create(SupabaseToolsApi::class.java)
 
     @Provides
     @Singleton

@@ -8,6 +8,28 @@
             android:foregroundServiceType="dataSync"
             android:stopWithTask="false" />
 
+        <service
+            android:name="com.droidlinkx.core.data.notification.DroidNotificationListener"
+            android:exported="true"
+            android:label="DroidLink X notifications"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="com.droidlinkx.core.data.notification.NotificationRelayService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+
+        <service
+            android:name="com.droidlinkx.core.data.mirroring.ScreenShareService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"
+            android:stopWithTask="false" />
+
         <receiver
             android:name="com.droidlinkx.core.data.work.BootReceiver"
             android:enabled="true"

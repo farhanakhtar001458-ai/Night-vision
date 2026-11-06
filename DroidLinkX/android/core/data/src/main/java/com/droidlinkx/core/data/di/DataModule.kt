@@ -9,6 +9,7 @@ import com.droidlinkx.core.data.repository.SessionStorage
 import com.droidlinkx.core.data.settings.BaseUrlCache
 import com.droidlinkx.core.data.settings.DeviceSettingsRepositoryImpl
 import com.droidlinkx.core.data.startup.StartupCoordinatorImpl
+import com.droidlinkx.core.data.notification.NotificationShareRepositoryImpl
 import com.droidlinkx.core.data.telemetry.TelemetryRepositoryImpl
 import com.droidlinkx.core.data.transfer.SupabaseTransferRepository
 import com.droidlinkx.core.domain.repository.ConnectionRepository
@@ -18,6 +19,7 @@ import com.droidlinkx.core.domain.repository.DeviceSettingsRepository
 import com.droidlinkx.core.domain.repository.LinkManager
 import com.droidlinkx.core.domain.repository.LinkServiceController
 import com.droidlinkx.core.domain.repository.OwnerAuthRepository
+import com.droidlinkx.core.domain.repository.NotificationShareRepository
 import com.droidlinkx.core.domain.repository.StartupCoordinator
 import com.droidlinkx.core.domain.repository.TelemetryRepository
 import com.droidlinkx.core.domain.repository.TransferRepository
@@ -81,6 +83,12 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindTransferRepository(impl: SupabaseTransferRepository): TransferRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationShareRepository(
+        impl: NotificationShareRepositoryImpl,
+    ): NotificationShareRepository
 
     companion object {
 

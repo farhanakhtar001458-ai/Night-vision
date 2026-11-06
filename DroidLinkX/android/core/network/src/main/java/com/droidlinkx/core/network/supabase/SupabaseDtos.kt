@@ -298,3 +298,57 @@ data class SupabaseStatusResponse(
     val serverTime: Long = 0,
     val deviceId: String? = null,
 )
+
+/* --------------------------- shared notifications -------------------------- */
+
+@JsonClass(generateAdapter = true)
+data class SupabaseNotificationInsert(
+    @Json(name = "owner_id") val ownerId: String,
+    @Json(name = "device_id") val deviceId: String,
+    @Json(name = "package_name") val packageName: String,
+    @Json(name = "app_name") val appName: String,
+    val title: String? = null,
+    val content: String? = null,
+    val category: String? = null,
+    @Json(name = "is_sensitive") val isSensitive: Boolean = false,
+    @Json(name = "posted_at") val postedAt: String,
+    @Json(name = "external_key") val externalKey: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class SupabaseNotificationRow(
+    val id: String,
+    @Json(name = "device_id") val deviceId: String,
+    @Json(name = "package_name") val packageName: String,
+    @Json(name = "app_name") val appName: String,
+    val title: String? = null,
+    val content: String? = null,
+    val category: String? = null,
+    @Json(name = "is_sensitive") val isSensitive: Boolean = false,
+    @Json(name = "posted_at") val postedAt: String,
+)
+
+/* ------------------------- WebRTC signalling rows ------------------------- */
+
+@JsonClass(generateAdapter = true)
+data class SupabaseRtcSignalInsert(
+    @Json(name = "owner_id") val ownerId: String,
+    @Json(name = "connection_id") val connectionId: String,
+    @Json(name = "device_id") val deviceId: String,
+    /** `device` = the phone that shares its screen, `viewer` = the phone watching. */
+    val sender: String,
+    /** `request` | `offer` | `answer` | `ice` | `hangup` */
+    val kind: String,
+    val payload: Map<String, Any?> = emptyMap(),
+)
+
+@JsonClass(generateAdapter = true)
+data class SupabaseRtcSignalRow(
+    val id: String,
+    @Json(name = "connection_id") val connectionId: String,
+    @Json(name = "device_id") val deviceId: String,
+    val sender: String,
+    val kind: String,
+    val payload: Map<String, Any?> = emptyMap(),
+    @Json(name = "created_at") val createdAt: String,
+)

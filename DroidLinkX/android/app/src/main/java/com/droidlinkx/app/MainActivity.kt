@@ -9,10 +9,7 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
@@ -31,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,14 +39,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.droidlinkx.app.ui.AuthRoute
 import com.droidlinkx.app.ui.AuthViewModel
-import com.droidlinkx.core.designsystem.component.DroidCard
-import com.droidlinkx.core.designsystem.component.ScreenHeader
-import com.droidlinkx.core.designsystem.component.SectionLabel
 import com.droidlinkx.core.designsystem.theme.DroidLinkColors
 import com.droidlinkx.core.designsystem.theme.DroidLinkTheme
 import com.droidlinkx.feature.dashboard.DashboardRoute
 import com.droidlinkx.feature.devices.DevicesRoute
 import com.droidlinkx.feature.settings.SettingsRoute
+import com.droidlinkx.feature.tools.ToolsRoute
 import com.droidlinkx.feature.transfers.TransfersRoute
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -152,7 +146,7 @@ fun DroidLinkApp(authViewModel: AuthViewModel = hiltViewModel()) {
             }
             composable(Tab.Devices.route) { DevicesRoute() }
             composable(Tab.Transfer.route) { TransfersRoute() }
-            composable(Tab.Tools.route) { PhasePlaceholder("Tools", "File manager, screen mirroring, remote camera, notification and clipboard tools are being delivered phase by phase. Nothing here is a mock: unfinished tools are not exposed.") }
+            composable(Tab.Tools.route) { ToolsRoute() }
             composable(Tab.Profile.route) {
                 SettingsRoute(
                     onOpenBatterySettings = {
@@ -163,20 +157,6 @@ fun DroidLinkApp(authViewModel: AuthViewModel = hiltViewModel()) {
                     onSignedOut = { navController.navigate(Tab.Home.route) { popUpTo(0) } },
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun PhasePlaceholder(title: String, detail: String) {
-    Column(Modifier.fillMaxSize().padding(18.dp)) {
-        Spacer(Modifier.height(12.dp))
-        ScreenHeader(title = title, subtitle = "Delivered in phases — no placeholder controls are shipped.")
-        Spacer(Modifier.height(16.dp))
-        DroidCard {
-            SectionLabel("Status")
-            Spacer(Modifier.height(8.dp))
-            Text(detail, color = DroidLinkColors.TextSecondary)
         }
     }
 }

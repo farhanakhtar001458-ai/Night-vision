@@ -123,6 +123,9 @@ Full document: `docs/security.md`.
 
 | Document | Contents |
 | --- | --- |
+| `docs/build-kit.md` | **APK build kit** — CI workflow, local Gradle build, signing, install steps |
+| `docs/mirroring.md` | Phone→phone screen mirroring (WebRTC + `rtc_signals` signalling) |
+| `docs/notifications.md` | Notification mirroring — privacy filters, relay, dashboard feed |
 | `docs/supabase.md` | Supabase setup: migrations, RLS, storage, realtime, functions, signalling |
 | `docs/architecture.md` | Components, request flows, failure handling |
 | `docs/api.md` | Every REST endpoint with auth scope and payloads |

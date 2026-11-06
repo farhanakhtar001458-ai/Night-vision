@@ -1,0 +1,67 @@
+name: DroidLink X debug APK
+
+on:
+  push:
+    branches:
+      - arena/b6d8b915-night-vision
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Assemble debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: DroidLinkX/android
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Accept Android SDK licences and install build platform
+        run: |
+          SDKMANAGER="$(command -v sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null 2>&1 \
+            || "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Gradle build (all modules, unit tests, debug APK)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SIGNALING_URL: ${{ secrets.SIGNALING_URL }}
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:testDebugUnitTest 2>&1 | tee build-output.log
+
+      - name: Record compiler output on failure
+        if: failure()
+        run: |
+          mkdir -p build-artifacts
+          cp build-output.log build-artifacts/gradle-output.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: droidlinkx-build-log
+          path: DroidLinkX/android/build-artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: droidlinkx-debug-apk
+          path: DroidLinkX/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
