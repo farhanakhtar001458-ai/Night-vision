@@ -6,6 +6,7 @@ import com.droidlinkx.core.data.repository.DeviceCatalogueRepositoryImpl
 import com.droidlinkx.core.data.repository.DeviceRegistrationRepositoryImpl
 import com.droidlinkx.core.data.repository.OwnerAuthRepositoryImpl
 import com.droidlinkx.core.data.repository.SessionStorage
+import com.droidlinkx.core.data.service.ConnectionServiceController
 import com.droidlinkx.core.data.settings.BaseUrlCache
 import com.droidlinkx.core.data.settings.DeviceSettingsRepositoryImpl
 import com.droidlinkx.core.data.startup.StartupCoordinatorImpl
