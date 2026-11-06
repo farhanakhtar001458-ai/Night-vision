@@ -7,6 +7,7 @@ import com.droidlinkx.core.domain.model.OwnerTokens
 import com.droidlinkx.core.domain.model.Outcome
 import com.droidlinkx.core.domain.model.toFailure
 import com.droidlinkx.core.domain.repository.OwnerAuthRepository
+import com.droidlinkx.core.network.api.OwnerApi
 import com.droidlinkx.core.network.api.PublicApi
 import com.droidlinkx.core.network.dto.AuthResponseDto
 import com.droidlinkx.core.network.dto.LoginRequestDto
@@ -26,6 +27,7 @@ import javax.inject.Singleton
 @Singleton
 class OwnerAuthRepositoryImpl @Inject constructor(
     private val publicApi: PublicApi,
+    private val ownerApi: OwnerApi,
     private val sessionStorage: SessionStorage,
 ) : OwnerAuthRepository {
 
@@ -104,7 +106,7 @@ class OwnerAuthRepositoryImpl @Inject constructor(
     override suspend fun logout() {
         val stored = sessionStorage.ownerSession()
         runCatching {
-            if (stored != null) publicApi.logout(LogoutRequestDto(stored.tokens.refreshToken))
+            if (stored != null) ownerApi.logout(LogoutRequestDto(stored.tokens.refreshToken))
         }.onFailure { DroidLog.w(message = "Logout call failed; clearing locally anyway", throwable = it) }
         sessionStorage.clearOwnerSession()
         sessionState.value = null
