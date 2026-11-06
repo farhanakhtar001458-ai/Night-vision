@@ -53,6 +53,8 @@ npm install && npm run dev                 # http://localhost:5173
 cd ../signaling && cp .env.example .env && npm ci && npm run dev   # ws://localhost:8090/ws
 ```
 
+**APK download:** [Releases](https://github.com/farhanakhtar001458-ai/Night-vision/releases) → `droidlinkx-debug.apk` (built by CI on every push). Install build kit: **`docs/build-kit.md`**.
+
 Full walkthrough — schema, policies, secrets, storage, realtime, verification: **`docs/supabase.md`**.
 
 Then create the owner account (open the dashboard, choose **Create account**; Supabase Auth confirms the
