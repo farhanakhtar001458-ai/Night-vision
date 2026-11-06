@@ -1,0 +1,34 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+.cache/
+
+# Backend runtime
+backend/storage/
+backend/storage-test/
+backend/uploads/
+.env
+.env.*
+!.env.example
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/*/build/
+android/**/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/captures/
+*.apk
+*.aab
+*.keystore
+!android/app/debug.keystore
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/

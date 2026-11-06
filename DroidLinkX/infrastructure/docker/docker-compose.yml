@@ -1,0 +1,94 @@
+name: droidlinkx
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-droidlinkx}
+      POSTGRES_USER: ${POSTGRES_USER:-droidlinkx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-droidlinkx} -d ${POSTGRES_DB:-droidlinkx}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://cloud.example.com}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://cloud.example.com}
+      DATABASE_URL: postgres://${POSTGRES_USER:-droidlinkx}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-droidlinkx}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-900}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-2592000}
+      DEVICE_TOKEN_TTL: ${DEVICE_TOKEN_TTL:-2592000}
+      TURN_URLS: ${TURN_URLS:-turn:turn.example.com:3478?transport=udp,turn:turn.example.com:3478?transport=tcp}
+      TURN_SECRET: ${TURN_SECRET:-}
+      TURN_TTL: ${TURN_TTL:-3600}
+      STORAGE_DIR: /app/storage
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-2147483648}
+      TRUST_PROXY: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - backend-storage:/app/storage
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  dashboard:
+    build:
+      context: ../../dashboard
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+
+  coturn:
+    image: coturn/coturn:4.6-alpine
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -c
+      - /etc/coturn/turnserver.conf
+      - --static-auth-secret=${TURN_SECRET}
+      - --realm=${TURN_REALM:-droidlinkx}
+      - --external-ip=${TURN_EXTERNAL_IP:-}
+    volumes:
+      - ../coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+
+volumes:
+  postgres-data:
+  redis-data:
+  backend-storage:

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DroidLink X</string>
+    <string name="connection_channel_name">Device connection</string>
+    <string name="connection_channel_description">Keeps this device reachable from your other DroidLink X devices.</string>
+</resources>
