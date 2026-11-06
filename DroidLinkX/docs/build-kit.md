@@ -12,7 +12,7 @@ Har cheez jo APK banane ke liye chahiye, ek jagah. Do raste hain: **GitHub Actio
 | Supabase URL + anon key | App me **baked** (`core/network/build.gradle.kts` me default) — APK install karke seedha aapke project se baat karega |
 | Screen mirroring | `feature/tools` → *Screen mirroring* (WebRTC, signaling `rtc_signals` table se) |
 | Notification sharing | `feature/tools` → *Notifications* (opt-in, privacy filters ke saath) |
-| APK binary | Is sandbox me JDK/Android SDK nahi hai, is liye yahan compile nahi hota — CI (neeche) 8–12 min me APK bana deta hai |
+| APK binary | CI se banta hai (JDK 17 + SDK 36): **https://github.com/farhanakhtar001458-ai/Night-vision/releases** — `droidlinkx-debug.apk` |
 
 ---
 

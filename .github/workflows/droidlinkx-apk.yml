@@ -71,8 +71,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="apk-$(date -u +%Y%m%d-%H%M%S)"
+          cp app/build/outputs/apk/debug/app-debug.apk droidlinkx-debug.apk
           gh release create "$tag" \
-            "app/build/outputs/apk/debug/app-debug.apk#droidlinkx-debug.apk" \
+            "droidlinkx-debug.apk" \
             --title "DroidLink X debug APK ($tag)" \
             --notes "Built from commit ${GITHUB_SHA:0:7} on ${GITHUB_REF_NAME}. Install on both phones and sign in with the same owner account." \
             --repo "$GITHUB_REPOSITORY"
