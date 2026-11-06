@@ -8,6 +8,7 @@ import com.droidlinkx.core.common.DroidLog
 import com.droidlinkx.core.data.service.ConnectionService
 import com.droidlinkx.core.data.settings.DeviceSettingsRepositoryImpl
 import com.droidlinkx.core.data.work.ConnectionRecoveryWorker
+import com.droidlinkx.core.domain.model.InitializationStep
 import com.droidlinkx.core.domain.repository.StartupCoordinator
 import com.droidlinkx.core.domain.repository.TransferRepository
 import dagger.hilt.android.HiltAndroidApp
@@ -57,15 +58,20 @@ class DroidLinkApplication : Application(), Configuration.Provider {
 
         applicationScope.launch {
             // The ordered boot sequence: identity -> credentials -> network -> owner -> device -> socket.
-            runCatching { startupCoordinator.get().initialize() }
+            val boot = runCatching { startupCoordinator.get().initialize() }
                 .onFailure { DroidLog.e(message = "Startup sequence could not run", throwable = it) }
+                .getOrNull()
 
             // Resume uploads interrupted by process death; chunk parts are idempotent.
             runCatching { transfers.get().resumePending() }
                 .onFailure { DroidLog.w(message = "Transfer queue could not resume", throwable = it) }
 
+            // Only hold a foreground service once the device is actually enrolled and signed in:
+            // starting it earlier means creating a service whose dependencies are not usable yet,
+            // and a failing service takes the whole process down.
+            val ready = boot?.step == InitializationStep.Ready
             val keepAlive = runCatching { settings.get().observeKeepAliveEnabled().first() }.getOrDefault(false)
-            if (keepAlive) {
+            if (ready && keepAlive) {
                 runCatching { ConnectionService.start(this@DroidLinkApplication) }
                     .onFailure { DroidLog.w(message = "Foreground service could not start", throwable = it) }
             }

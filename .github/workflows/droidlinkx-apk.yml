@@ -44,7 +44,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew --no-daemon --console=plain --stacktrace :app:assembleDebug :app:testDebugUnitTest 2>&1 | tee build-output.log
+          ./gradlew --no-daemon --console=plain --stacktrace :app:assembleDebug :app:testDebugUnitTest :core:network:testDebugUnitTest 2>&1 | tee build-output.log
 
       - name: Publish compiler errors back to the branch
         if: failure()

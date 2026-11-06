@@ -14,8 +14,13 @@ data class SupabaseConfig(
 ) {
     val isConfigured: Boolean get() = url.isNotBlank() && anonKey.isNotBlank()
 
-    /** Base URL for Retrofit: always ends with a slash. */
-    val baseUrl: String get() = if (url.endsWith("/")) url else "$url/"
+    /** Base URL for Retrofit: always an absolute http(s) URL ending with a slash. */
+    val baseUrl: String
+        get() = when {
+            !url.startsWith("http") -> "$FALLBACK_URL/"
+            url.endsWith("/") -> url
+            else -> "$url/"
+        }
 
     /** Origin of the WebRTC signalling relay, without the `/ws` suffix. */
     val signalingOrigin: String
@@ -26,10 +31,26 @@ data class SupabaseConfig(
             .ifBlank { url }
 
     companion object {
-        fun fromBuildConfig(): SupabaseConfig = SupabaseConfig(
-            url = BuildConfig.SUPABASE_URL.trim().trimEnd('/'),
-            anonKey = BuildConfig.SUPABASE_ANON_KEY.trim(),
-            signalingUrl = BuildConfig.SIGNALING_URL,
-        )
+        /**
+         * Last line of defence: a build that somehow produced an empty — or the literal string
+         * `"null"` — coordinate must still talk to the real project instead of crashing Retrofit
+         * with "Expected URL scheme 'http' or 'https'".
+         */
+        const val FALLBACK_URL = "https://zarxnrkzdwnjiauybghl.supabase.co"
+        const val FALLBACK_ANON_KEY =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inphcnhucmt6ZHduamlhdXliZ2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NzQ1OTUsImV4cCI6MjEwODM1MDU5NX0.dcdHLqwF75YfEOTT2H9Vw-MN0Sr1UzIOzoGYTaB7r2s"
+
+        private fun usable(value: String?): String? =
+            value?.trim()?.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
+
+        fun fromBuildConfig(): SupabaseConfig {
+            val url = (usable(BuildConfig.SUPABASE_URL) ?: FALLBACK_URL).trimEnd('/')
+            val anonKey = usable(BuildConfig.SUPABASE_ANON_KEY) ?: FALLBACK_ANON_KEY
+            return SupabaseConfig(
+                url = if (url.startsWith("http")) url else FALLBACK_URL,
+                anonKey = anonKey,
+                signalingUrl = usable(BuildConfig.SIGNALING_URL).orEmpty(),
+            )
+        }
     }
 }
