@@ -20,9 +20,10 @@ Har cheez jo APK banane ke liye chahiye, ek jagah. Do raste hain: **GitHub Actio
 
 Workflow: `.github/workflows/droidlinkx-apk.yml`
 
-1. Repo → **Actions** → **DroidLink X debug APK** → **Run workflow** (ya bas branch par push).
-2. Job khatam hone par **Artifacts → `droidlinkx-debug-apk`** download karo → `app-debug.apk`.
-3. Phone me install karo (`adb install -r app-debug.apk`, ya file directly kholke "Install unknown apps" allow karo).
+1. Repo → **Actions** → **DroidLink X debug APK** → job green hone ka wait karo (8–12 min).
+2. **Releases** page par `apk-<timestamp>` tag ke saath **`droidlinkx-debug.apk`** mil jayega — seedha download karo.
+   (Backup: Actions run page → Artifacts → `droidlinkx-debug-apk`.)
+3. Phone me install karo (`adb install -r droidlinkx-debug.apk`, ya file kholke "Install unknown apps" allow karo).
 
 Kuch bhi configure karne ki zarurat nahi — URL/anon key already baked hain. Agar aap **apna alag** project use karna chahein to repo secrets set kar do (workflow inhi ko uthata hai):
 

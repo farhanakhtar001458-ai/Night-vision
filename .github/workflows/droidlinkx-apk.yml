@@ -65,6 +65,18 @@ jobs:
           git commit -m "[skip ci] chore: record gradle failure log"
           git push origin HEAD:${GITHUB_REF_NAME}
 
+      - name: Attach APK to a GitHub release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="apk-$(date -u +%Y%m%d-%H%M%S)"
+          gh release create "$tag" \
+            "app/build/outputs/apk/debug/app-debug.apk#droidlinkx-debug.apk" \
+            --title "DroidLink X debug APK ($tag)" \
+            --notes "Built from commit ${GITHUB_SHA:0:7} on ${GITHUB_REF_NAME}. Install on both phones and sign in with the same owner account." \
+            --repo "$GITHUB_REPOSITORY"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

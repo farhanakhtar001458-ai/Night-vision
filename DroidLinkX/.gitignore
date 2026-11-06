@@ -33,3 +33,4 @@ Thumbs.db
 *.swp
 .vscode/
 dist-min/
+android/artifacts/
