@@ -37,6 +37,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Installs the crash handler before Application.onCreate runs. -->
+        <provider
+            android:name=".crash.CrashInitProvider"
+            android:authorities="${applicationId}.crash-init"
+            android:exported="false"
+            android:initOrder="100" />
+
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

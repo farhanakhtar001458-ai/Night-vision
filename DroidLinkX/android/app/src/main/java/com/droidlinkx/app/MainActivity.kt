@@ -26,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -37,6 +40,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.droidlinkx.app.crash.CrashGuard
+import com.droidlinkx.app.crash.CrashScreen
 import com.droidlinkx.app.ui.AuthRoute
 import com.droidlinkx.app.ui.AuthViewModel
 import com.droidlinkx.core.designsystem.theme.DroidLinkColors
@@ -56,10 +61,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestNotificationPermissionIfNeeded()
+        CrashGuard.install(this)
+        runCatching { requestNotificationPermissionIfNeeded() }
         setContent {
             DroidLinkTheme {
-                DroidLinkApp()
+                CrashGate()
             }
         }
     }
@@ -82,6 +88,31 @@ private sealed class Tab(val route: String, val label: String) {
     companion object {
         val all = listOf(Home, Devices, Transfer, Tools, Profile)
     }
+}
+
+/**
+ * Renders the crash report left by the previous launch, or the app itself. Nothing else runs until
+ * the report is dismissed, so a crash never turns into an unreadable crash loop.
+ */
+@Composable
+private fun CrashGate() {
+    val context = LocalContext.current
+    val report = remember { CrashGuard.lastReport(context) }
+    var dismissed by remember { mutableStateOf(false) }
+
+    if (report != null && !dismissed) {
+        CrashScreen(
+            report = report,
+            onCopy = { CrashGuard.copyToClipboard(context, report) },
+            onDismiss = {
+                CrashGuard.clear(context)
+                dismissed = true
+            },
+        )
+        return
+    }
+
+    DroidLinkApp()
 }
 
 @Composable
