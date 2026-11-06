@@ -30,6 +30,22 @@ Dashboard ───┤   Supabase PostgREST + RLS        devices, transfers, fil
 | `supabase/tests/local_stub.sql` | `auth`/`storage` stubs so migrations can be tested on plain PG16 |
 | `signaling/` | Dedicated WebRTC signalling relay (TypeScript, 18 tests) |
 
+## 0. Live project status
+
+Project `zarxnrkzdwnjiauybghl` (`https://zarxnrkzdwnjiauybghl.supabase.co`) is already provisioned:
+
+| Piece | State |
+| --- | --- |
+| Schema (15 tables), RLS + 21 policies | applied |
+| Buckets `droidlinkx-files`, `droidlinkx-transfers` + owner-folder policies | applied |
+| Realtime publication (7 tables) + broadcast topics `owner:<uuid>` / `device:<uuid>` | applied |
+| `rtc_signals`, `prune_rtc_signals()`, `sync_transfer_progress()` | applied |
+| Secrets: `DEVICE_JWT_SECRET`, `APP_ORIGINS`, `DOWNLOAD_URL_TTL_SECONDS`, `MAX_TRANSFER_BYTES`, `STUN_URLS` | set |
+| Edge function `enroll-device` | deployed (`verify_jwt=true`) |
+| Other 7 functions | bundle + deploy with `supabase/functions/deploy.sh` (see §3) |
+
+`supabase db push` is only needed for a *new* project; on this one it is a no-op replay.
+
 ## 1. Create the project and apply the database
 
 ```bash

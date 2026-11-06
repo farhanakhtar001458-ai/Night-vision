@@ -7,12 +7,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   apk:
     name: Assemble debug APK
     runs-on: ubuntu-latest
+    # Bot commits that only carry a failure log must not start another build.
+    if: ${{ !contains(github.event.head_commit.message || '', '[skip ci]') }}
     timeout-minutes: 45
     defaults:
       run:
@@ -42,13 +44,26 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:testDebugUnitTest 2>&1 | tee build-output.log
+          ./gradlew --no-daemon --console=plain --stacktrace :app:assembleDebug :app:testDebugUnitTest 2>&1 | tee build-output.log
 
-      - name: Record compiler output on failure
+      - name: Publish compiler errors back to the branch
         if: failure()
         run: |
-          mkdir -p build-artifacts
-          cp build-output.log build-artifacts/gradle-output.log
+          mkdir -p artifacts
+          {
+            echo "# Gradle failure — $(date -u +%FT%TZ)"
+            grep -E "^(e: |w: .*error|FAILURE:|\* What went wrong|Caused by:|> )" build-output.log | head -n 300
+            echo
+            echo "--- last 120 lines ---"
+            tail -n 120 build-output.log
+          } > artifacts/gradle-failure.log
+          cp build-output.log artifacts/gradle-output.log
+          git config user.name 'droidlinkx-ci'
+          git config user.email 'ci@droidlinkx.local'
+          git add -f artifacts
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "[skip ci] chore: record gradle failure log"
+          git push origin HEAD:${GITHUB_REF_NAME}
 
       - uses: actions/upload-artifact@v4
         if: always()
