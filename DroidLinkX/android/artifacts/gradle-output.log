@@ -14,27 +14,27 @@ For more details see https://docs.gradle.org/8.14.3/release-notes.html
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 Calculating task graph as no cached configuration is available for tasks: :app:assembleDebug :app:testDebugUnitTest
-> Task :app:preBuild UP-TO-DATE
 > Task :core:domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:common:preBuild UP-TO-DATE
+> Task :core:common:preDebugBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :core:domain:processResources NO-SOURCE
-> Task :core:common:preBuild UP-TO-DATE
 > Task :core:data:preBuild UP-TO-DATE
 > Task :core:data:preDebugBuild UP-TO-DATE
-> Task :core:common:preDebugBuild UP-TO-DATE
-> Task :app:generateDebugBuildConfig
+> Task :core:data:writeDebugAarMetadata
 > Task :core:database:preBuild UP-TO-DATE
 > Task :core:database:preDebugBuild UP-TO-DATE
-> Task :core:data:writeDebugAarMetadata
+> Task :app:generateDebugBuildConfig
 > Task :core:designsystem:preBuild UP-TO-DATE
 > Task :core:designsystem:preDebugBuild UP-TO-DATE
-> Task :core:designsystem:writeDebugAarMetadata
 > Task :core:database:writeDebugAarMetadata
 > Task :core:network:preBuild UP-TO-DATE
-> Task :core:security:preBuild UP-TO-DATE
 > Task :core:network:preDebugBuild UP-TO-DATE
+> Task :core:designsystem:writeDebugAarMetadata
+> Task :core:security:preBuild UP-TO-DATE
 > Task :core:security:preDebugBuild UP-TO-DATE
 > Task :core:network:writeDebugAarMetadata
 > Task :feature:dashboard:preBuild UP-TO-DATE
@@ -44,57 +44,57 @@ Calculating task graph as no cached configuration is available for tasks: :app:a
 > Task :feature:devices:preDebugBuild UP-TO-DATE
 > Task :feature:devices:writeDebugAarMetadata
 > Task :feature:settings:preBuild UP-TO-DATE
-> Task :core:common:writeDebugAarMetadata
 > Task :feature:settings:preDebugBuild UP-TO-DATE
+> Task :core:common:writeDebugAarMetadata
 > Task :feature:tools:preBuild UP-TO-DATE
 > Task :feature:tools:preDebugBuild UP-TO-DATE
-> Task :core:security:writeDebugAarMetadata
-> Task :feature:transfers:preBuild UP-TO-DATE
-> Task :feature:tools:writeDebugAarMetadata
 > Task :feature:settings:writeDebugAarMetadata
+> Task :feature:transfers:preBuild UP-TO-DATE
 > Task :feature:transfers:preDebugBuild UP-TO-DATE
-> Task :feature:transfers:writeDebugAarMetadata
+> Task :core:security:writeDebugAarMetadata
+> Task :feature:tools:writeDebugAarMetadata
 > Task :app:generateDebugResValues
 > Task :core:common:generateDebugResValues
-> Task :core:data:generateDebugResValues FROM-CACHE
+> Task :feature:transfers:writeDebugAarMetadata
 > Task :core:common:generateDebugResources
+> Task :core:data:generateDebugResValues FROM-CACHE
 > Task :core:data:generateDebugResources FROM-CACHE
 > Task :core:common:packageDebugResources
 > Task :core:data:packageDebugResources
-> Task :core:database:generateDebugResValues FROM-CACHE
 > Task :core:designsystem:generateDebugResValues FROM-CACHE
+> Task :core:database:generateDebugResValues FROM-CACHE
 > Task :core:designsystem:generateDebugResources FROM-CACHE
 > Task :core:database:generateDebugResources FROM-CACHE
 > Task :core:database:packageDebugResources
 > Task :core:designsystem:packageDebugResources
-> Task :core:network:generateDebugResValues FROM-CACHE
 > Task :core:security:generateDebugResValues FROM-CACHE
+> Task :core:network:generateDebugResValues FROM-CACHE
 > Task :core:network:generateDebugResources FROM-CACHE
+> Task :core:security:generateDebugResources FROM-CACHE
 > Task :core:network:packageDebugResources
 > Task :feature:dashboard:generateDebugResValues FROM-CACHE
-> Task :feature:dashboard:generateDebugResources FROM-CACHE
-> Task :core:security:generateDebugResources FROM-CACHE
-> Task :feature:dashboard:packageDebugResources
 > Task :core:security:packageDebugResources
 > Task :feature:devices:generateDebugResValues FROM-CACHE
-> Task :feature:settings:generateDebugResValues FROM-CACHE
+> Task :feature:dashboard:generateDebugResources FROM-CACHE
 > Task :feature:devices:generateDebugResources FROM-CACHE
-> Task :feature:settings:generateDebugResources FROM-CACHE
-> Task :feature:settings:packageDebugResources
+> Task :feature:dashboard:packageDebugResources
+> Task :feature:settings:generateDebugResValues FROM-CACHE
 > Task :feature:devices:packageDebugResources
-> Task :feature:transfers:generateDebugResValues FROM-CACHE
+> Task :feature:settings:generateDebugResources FROM-CACHE
 > Task :feature:tools:generateDebugResValues FROM-CACHE
+> Task :feature:tools:generateDebugResources FROM-CACHE
+> Task :feature:settings:packageDebugResources
+> Task :feature:transfers:generateDebugResValues FROM-CACHE
+> Task :feature:tools:packageDebugResources
 > Task :feature:transfers:generateDebugResources FROM-CACHE
 > Task :feature:transfers:packageDebugResources
-> Task :feature:tools:generateDebugResources FROM-CACHE
 > Task :app:generateDebugResources
-> Task :feature:tools:packageDebugResources
-> Task :app:packageDebugResources
 > Task :app:mapDebugSourceSetPaths
 > Task :app:checkDebugAarMetadata
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug
 > Task :core:common:extractDeepLinksDebug FROM-CACHE
+> Task :app:packageDebugResources
 > Task :core:common:processDebugManifest
 > Task :core:data:extractDeepLinksDebug FROM-CACHE
 > Task :core:data:processDebugManifest
@@ -109,49 +109,49 @@ Calculating task graph as no cached configuration is available for tasks: :app:a
 > Task :feature:dashboard:extractDeepLinksDebug FROM-CACHE
 > Task :feature:dashboard:processDebugManifest
 > Task :feature:devices:extractDeepLinksDebug FROM-CACHE
-> Task :feature:devices:processDebugManifest
-> Task :feature:settings:extractDeepLinksDebug FROM-CACHE
 > Task :app:parseDebugLocalResources
-> Task :feature:settings:processDebugManifest
+> Task :feature:settings:extractDeepLinksDebug FROM-CACHE
+> Task :feature:devices:processDebugManifest
 > Task :feature:tools:extractDeepLinksDebug FROM-CACHE
+> Task :feature:settings:processDebugManifest
 > Task :feature:transfers:extractDeepLinksDebug FROM-CACHE
 > Task :feature:tools:processDebugManifest
 > Task :feature:transfers:processDebugManifest
-> Task :core:common:compileDebugLibraryResources
+> Task :app:mergeDebugResources
 > Task :core:common:parseDebugLocalResources
 > Task :core:common:generateDebugRFile
-> Task :core:data:compileDebugLibraryResources FROM-CACHE
+> Task :core:common:compileDebugLibraryResources
 > Task :core:data:parseDebugLocalResources FROM-CACHE
+> Task :core:data:compileDebugLibraryResources
 > Task :core:data:generateDebugRFile
 > Task :core:database:compileDebugLibraryResources FROM-CACHE
-> Task :core:database:parseDebugLocalResources FROM-CACHE
-> Task :core:database:generateDebugRFile
 > Task :core:designsystem:compileDebugLibraryResources FROM-CACHE
+> Task :core:database:parseDebugLocalResources FROM-CACHE
 > Task :core:designsystem:parseDebugLocalResources FROM-CACHE
-> Task :core:designsystem:generateDebugRFile
+> Task :core:database:generateDebugRFile
 > Task :core:network:compileDebugLibraryResources FROM-CACHE
 > Task :core:network:parseDebugLocalResources FROM-CACHE
-> Task :core:network:generateDebugRFile
+> Task :core:designsystem:generateDebugRFile
 > Task :core:security:compileDebugLibraryResources FROM-CACHE
 > Task :core:security:parseDebugLocalResources FROM-CACHE
-> Task :core:security:generateDebugRFile
+> Task :core:network:generateDebugRFile
 > Task :feature:dashboard:compileDebugLibraryResources FROM-CACHE
 > Task :feature:dashboard:parseDebugLocalResources FROM-CACHE
-> Task :app:mergeDebugResources
+> Task :core:security:generateDebugRFile
 > Task :feature:devices:compileDebugLibraryResources FROM-CACHE
-> Task :feature:devices:parseDebugLocalResources FROM-CACHE
-> Task :app:processDebugMainManifest
 > Task :feature:dashboard:generateDebugRFile
+> Task :feature:devices:parseDebugLocalResources FROM-CACHE
 > Task :feature:settings:compileDebugLibraryResources FROM-CACHE
-> Task :feature:devices:generateDebugRFile
-> Task :feature:tools:compileDebugLibraryResources FROM-CACHE
 > Task :feature:settings:parseDebugLocalResources FROM-CACHE
-> Task :feature:tools:parseDebugLocalResources FROM-CACHE
-> Task :feature:tools:generateDebugRFile
 > Task :feature:settings:generateDebugRFile
+> Task :app:processDebugMainManifest
+> Task :feature:tools:compileDebugLibraryResources FROM-CACHE
+> Task :feature:devices:generateDebugRFile
+> Task :feature:tools:parseDebugLocalResources FROM-CACHE
 > Task :feature:transfers:compileDebugLibraryResources FROM-CACHE
-> Task :core:common:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:transfers:parseDebugLocalResources FROM-CACHE
+> Task :feature:tools:generateDebugRFile
+> Task :core:common:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:transfers:generateDebugRFile
 > Task :core:common:javaPreCompileDebug
 > Task :core:data:checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -232,23 +232,23 @@ Calculating task graph as no cached configuration is available for tasks: :app:a
 > Task :app:desugarDebugFileDependencies
 > Task :core:common:compileDebugKotlin
 > Task :core:common:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:designsystem:compileDebugKotlin
 > Task :core:domain:compileKotlin
 > Task :core:domain:compileJava NO-SOURCE
 > Task :core:domain:classes UP-TO-DATE
 > Task :core:domain:jar
-> Task :core:common:bundleLibRuntimeToJarDebug
-> Task :core:common:bundleLibCompileToJarDebug
-> Task :core:designsystem:compileDebugKotlin
-> Task :app:checkDebugDuplicateClasses
 > Task :core:designsystem:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:common:bundleLibCompileToJarDebug
 > Task :core:designsystem:bundleLibCompileToJarDebug
+> Task :core:common:bundleLibRuntimeToJarDebug
+> Task :app:checkDebugDuplicateClasses
 > Task :core:designsystem:bundleLibRuntimeToJarDebug
 > Task :core:security:kspDebugKotlin
 > Task :feature:dashboard:kspDebugKotlin
 > Task :core:security:compileDebugKotlin
-> Task :core:database:kspDebugKotlin
 > Task :feature:dashboard:compileDebugKotlin
 > Task :core:network:kspDebugKotlin
+> Task :core:database:kspDebugKotlin
 > Task :core:security:compileDebugJavaWithJavac
 > Task :core:security:transformDebugClassesWithAsm
 > Task :core:security:bundleLibCompileToJarDebug
@@ -261,20 +261,20 @@ w: file:///home/runner/work/Night-vision/Night-vision/DroidLinkX/android/core/da
 > Task :core:database:transformDebugClassesWithAsm
 > Task :core:database:bundleLibCompileToJarDebug
 > Task :core:database:bundleLibRuntimeToJarDebug
-> Task :feature:dashboard:compileDebugJavaWithJavac
 > Task :feature:devices:kspDebugKotlin
+> Task :feature:dashboard:compileDebugJavaWithJavac
+> Task :feature:settings:kspDebugKotlin
 > Task :feature:dashboard:transformDebugClassesWithAsm
 > Task :feature:dashboard:bundleLibCompileToJarDebug
-> Task :feature:settings:kspDebugKotlin
-> Task :feature:transfers:kspDebugKotlin
-> Task :feature:settings:compileDebugKotlin
 > Task :feature:devices:compileDebugKotlin
-> Task :feature:settings:compileDebugJavaWithJavac
-> Task :feature:settings:transformDebugClassesWithAsm
-> Task :feature:settings:bundleLibCompileToJarDebug
 > Task :feature:devices:compileDebugJavaWithJavac
 > Task :feature:devices:transformDebugClassesWithAsm
 > Task :feature:devices:bundleLibCompileToJarDebug
+> Task :feature:settings:compileDebugKotlin
+> Task :feature:transfers:kspDebugKotlin
+> Task :feature:settings:compileDebugJavaWithJavac
+> Task :feature:settings:transformDebugClassesWithAsm
+> Task :feature:settings:bundleLibCompileToJarDebug
 > Task :feature:dashboard:bundleLibRuntimeToJarDebug
 > Task :feature:devices:bundleLibRuntimeToJarDebug
 > Task :feature:settings:bundleLibRuntimeToJarDebug
@@ -286,30 +286,30 @@ w: file:///home/runner/work/Night-vision/Night-vision/DroidLinkX/android/core/da
 > Task :feature:dashboard:processDebugJavaRes
 > Task :feature:devices:processDebugJavaRes
 > Task :feature:settings:processDebugJavaRes
-> Task :feature:transfers:processDebugJavaRes
-> Task :core:security:bundleLibRuntimeToDirDebug
 
 > Task :core:network:compileDebugKotlin
 w: file:///home/runner/work/Night-vision/Night-vision/DroidLinkX/android/core/network/src/main/java/com/droidlinkx/core/network/supabase/SupabaseBackendApis.kt:227:69 'fun create(contentType: MediaType?, content: String): ResponseBody' is deprecated. Moved to extension function. Put the 'content' argument first to fix Java.
 
 > Task :feature:transfers:compileDebugJavaWithJavac
-> Task :app:mergeExtDexDebug
-> Task :core:database:bundleLibRuntimeToDirDebug
-> Task :core:network:compileDebugJavaWithJavac
+> Task :feature:transfers:processDebugJavaRes
 > Task :core:network:processDebugJavaRes
-> Task :core:network:transformDebugClassesWithAsm
-> Task :core:network:bundleLibCompileToJarDebug
-> Task :feature:dashboard:bundleLibRuntimeToDirDebug
-> Task :core:network:bundleLibRuntimeToJarDebug
 > Task :feature:transfers:transformDebugClassesWithAsm
-> Task :feature:transfers:bundleLibCompileToJarDebug
+> Task :app:mergeExtDexDebug
+> Task :core:network:compileDebugJavaWithJavac
+> Task :core:security:bundleLibRuntimeToDirDebug
+> Task :core:database:bundleLibRuntimeToDirDebug
 > Task :feature:transfers:bundleLibRuntimeToJarDebug
+> Task :core:network:transformDebugClassesWithAsm
+> Task :feature:transfers:bundleLibCompileToJarDebug
+> Task :core:network:bundleLibCompileToJarDebug
+> Task :core:network:bundleLibRuntimeToJarDebug
 > Task :core:network:bundleLibRuntimeToDirDebug
+> Task :feature:dashboard:bundleLibRuntimeToDirDebug
 > Task :feature:devices:bundleLibRuntimeToDirDebug
 > Task :feature:settings:bundleLibRuntimeToDirDebug
-> Task :feature:transfers:bundleLibRuntimeToDirDebug
 > Task :core:common:bundleLibRuntimeToDirDebug
 > Task :core:designsystem:bundleLibRuntimeToDirDebug
+> Task :feature:transfers:bundleLibRuntimeToDirDebug
 > Task :app:mergeDebugJniLibFolders
 > Task :core:common:mergeDebugJniLibFolders
 > Task :core:common:mergeDebugNativeLibs NO-SOURCE
@@ -318,32 +318,32 @@ w: file:///home/runner/work/Night-vision/Night-vision/DroidLinkX/android/core/ne
 > Task :core:data:mergeDebugNativeLibs NO-SOURCE
 > Task :core:data:copyDebugJniLibsProjectOnly
 > Task :core:database:mergeDebugJniLibFolders
-> Task :core:designsystem:mergeDebugJniLibFolders
-> Task :core:designsystem:mergeDebugNativeLibs NO-SOURCE
 > Task :core:database:mergeDebugNativeLibs NO-SOURCE
-> Task :core:designsystem:copyDebugJniLibsProjectOnly
+> Task :core:designsystem:mergeDebugJniLibFolders
 > Task :core:database:copyDebugJniLibsProjectOnly
+> Task :core:network:mergeDebugJniLibFolders
+> Task :core:designsystem:mergeDebugNativeLibs NO-SOURCE
+> Task :core:network:mergeDebugNativeLibs NO-SOURCE
+> Task :core:designsystem:copyDebugJniLibsProjectOnly
+> Task :core:network:copyDebugJniLibsProjectOnly
 > Task :core:security:mergeDebugJniLibFolders
 > Task :core:security:mergeDebugNativeLibs NO-SOURCE
-> Task :core:security:copyDebugJniLibsProjectOnly
 > Task :feature:dashboard:mergeDebugJniLibFolders
-> Task :core:network:mergeDebugJniLibFolders
+> Task :core:security:copyDebugJniLibsProjectOnly
 > Task :feature:dashboard:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:dashboard:copyDebugJniLibsProjectOnly
-> Task :core:network:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:devices:mergeDebugJniLibFolders
-> Task :core:network:copyDebugJniLibsProjectOnly
-> Task :feature:devices:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:settings:mergeDebugJniLibFolders
+> Task :feature:devices:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:settings:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:devices:copyDebugJniLibsProjectOnly
 > Task :feature:settings:copyDebugJniLibsProjectOnly
 > Task :feature:tools:mergeDebugJniLibFolders
+> Task :feature:tools:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:transfers:mergeDebugJniLibFolders
+> Task :feature:tools:copyDebugJniLibsProjectOnly
 > Task :feature:transfers:mergeDebugNativeLibs NO-SOURCE
 > Task :feature:transfers:copyDebugJniLibsProjectOnly
-> Task :feature:tools:mergeDebugNativeLibs NO-SOURCE
-> Task :feature:tools:copyDebugJniLibsProjectOnly
 > Task :app:mergeDebugNativeLibs
 
 > Task :app:stripDebugDebugSymbols
@@ -354,124 +354,18 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:preDebugUnitTestBuild UP-TO-DATE
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 > Task :app:validateSigningDebug
+> Task :core:data:kspDebugKotlin
 
-> Task :core:data:kspDebugKotlin FAILED
-e: [ksp] ModuleProcessingStep was unable to process 'com.droidlinkx.core.data.di.DataModule' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindOwnerAuthRepository(com.droidlinkx.core.data.repository.OwnerAuthRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindDeviceRegistrationRepository(com.droidlinkx.core.data.repository.DeviceRegistrationRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindDeviceCatalogueRepository(com.droidlinkx.core.data.repository.DeviceCatalogueRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindConnectionRepository(com.droidlinkx.core.data.repository.ConnectionRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindTelemetryRepository(com.droidlinkx.core.data.telemetry.TelemetryRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindLinkManager(com.droidlinkx.core.data.connection.LinkManagerImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindStartupCoordinator(com.droidlinkx.core.data.startup.StartupCoordinatorImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindDeviceSettingsRepository(com.droidlinkx.core.data.settings.DeviceSettingsRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindLinkServiceController(ConnectionServiceController)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindTransferRepository(com.droidlinkx.core.data.transfer.SupabaseTransferRepository)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-e: [ksp] BindingMethodProcessingStep was unable to process 'bindNotificationShareRepository(com.droidlinkx.core.data.notification.NotificationShareRepositoryImpl)' because 'ConnectionServiceController' could not be resolved.
-
-Dependency trace:
-    => element (CLASS): com.droidlinkx.core.data.di.DataModule
-    => element (METHOD): bindLinkServiceController(ConnectionServiceController)
-    => element (PARAMETER): impl
-    => type (ERROR parameter type): ConnectionServiceController
-
-If type 'ConnectionServiceController' is a generated type, check above for compilation errors that may have prevented the type from being generated. Otherwise, ensure that type 'ConnectionServiceController' is on your classpath.
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793969811145.json
+> Task :core:data:compileDebugKotlin FAILED
+e: file:///home/runner/work/Night-vision/Night-vision/DroidLinkX/android/core/data/src/main/java/com/droidlinkx/core/data/repository/OwnerAuthRepositoryImpl.kt:107:43 Unresolved reference 'logout'.
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793970105394.json
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':core:data:kspDebugKotlin'.
-> A failure occurred while executing com.google.devtools.ksp.gradle.KspAAWorkerAction
-   > KSP failed with exit code: PROCESSING_ERROR
+Execution failed for task ':core:data:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
 
 * Try:
 > Run with --info or --debug option to get more log output.
@@ -479,7 +373,7 @@ Execution failed for task ':core:data:kspDebugKotlin'.
 > Get more help at https://help.gradle.org.
 
 * Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':core:data:kspDebugKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':core:data:compileDebugKotlin'.
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
@@ -512,7 +406,7 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':core:da
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing com.google.devtools.ksp.gradle.KspAAWorkerAction
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
 	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:287)
 	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
 	at org.gradle.internal.Factories$1.create(Factories.java:31)
@@ -642,8 +536,10 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: java.lang.Exception: KSP failed with exit code: PROCESSING_ERROR
-	at com.google.devtools.ksp.gradle.KspAAWorkerAction.execute(KspAATask.kt:606)
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:119)
+	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:76)
 	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
@@ -674,5 +570,5 @@ Caused by: java.lang.Exception: KSP failed with exit code: PROCESSING_ERROR
 
 
 BUILD FAILED in 4m 10s
-253 actionable tasks: 194 executed, 59 from cache
+254 actionable tasks: 196 executed, 58 from cache
 Configuration cache entry stored.
