@@ -1,5 +1,11 @@
 # Database
 
+> **The production database is Supabase Postgres.** Its schema is defined by
+> `supabase/migrations/*.sql` (5 files) and documented in [`docs/supabase.md`](supabase.md).
+> The tables listed below belong to the optional self-hosted BFF and are *not* created in, or used by,
+> the Supabase project — there is no second schema and no duplicated auth.
+
+
 PostgreSQL 16. Schema: `backend/src/database/migrations/001_init.sql`, mirrored at
 `infrastructure/database/001_schema.sql` (mounted into the Postgres container for first boot).
 The backend also applies migrations on startup (`npm run migrate`) and is idempotent.

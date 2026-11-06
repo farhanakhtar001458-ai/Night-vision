@@ -120,3 +120,34 @@ Serve `dashboard/dist` with any static server that proxies `/api` and `/ws` to t
    Mirroring diagnostics panel.
 5. Enroll a test device, verify presence, a mirroring session, a resumable transfer and a revocation.
 6. Back up the database and storage volume.
+
+---
+
+## 6. Supabase deployment (current architecture)
+
+1. **Database**: `supabase db push` applies the 5 migrations. Verify with the SQL recipe in
+   `docs/supabase.md` (21 RLS assertions) before pointing clients at it.
+2. **Secrets**: `DEVICE_JWT_SECRET`, `SIGNALING_URL`, `TURN_*`, `STUN_URLS`, `APP_ORIGINS`,
+   `DOWNLOAD_URL_TTL_SECONDS`, `MAX_TRANSFER_BYTES`.
+3. **Functions**: deploy all eight names — `enroll-device`, `revoke-device`, `create-session`,
+   `authorize-connection`, `initiate-transfer`, `generate-secure-download`, `update-device-status`,
+   `finalize-transfer`. `create-session` and `update-device-status` run with `verify_jwt = false`
+   (they authenticate a device secret / device token in-code) — everything else requires a JWT.
+4. **Storage**: both buckets are created by the migrations and are private. Never make them public:
+   downloads go through `generate-secure-download` signed URLs (5-minute TTL by default).
+5. **Signalling relay**: `docker compose -f infrastructure/docker/docker-compose.yml up -d signaling`
+   (image built from `signaling/Dockerfile`). Terminate TLS in front of it and publish
+   `wss://signal.example.com/ws`; set `SIGNALING_URL` to the same origin in function secrets.
+6. **Dashboard**: static build with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+   `VITE_SIGNALING_URL`, `VITE_STUN_URLS`, `VITE_TURN_URLS`; nginx must upgrade `/ws` to the relay.
+7. **Android**: build with Gradle properties `droidlinkx.supabase.url`,
+   `droidlinkx.supabase.anonKey`, `droidlinkx.signaling.url` (or the matching environment variables).
+   The anon key is public by design; the `service_role` key must never appear in an APK.
+
+### Operational checks
+
+```bash
+curl -fsS https://signal.example.com/health          # {"status":"ok",...}
+curl -fsS -H "apikey: $ANON" "$SUPABASE_URL/rest/v1/" -o /dev/null -w "%{http_code}\n"
+supabase functions logs finalize-transfer --tail
+```

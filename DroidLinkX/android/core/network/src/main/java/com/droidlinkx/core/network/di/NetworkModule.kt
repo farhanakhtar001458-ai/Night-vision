@@ -4,6 +4,16 @@ import com.droidlinkx.core.network.BuildConfig
 import com.droidlinkx.core.network.api.DeviceApi
 import com.droidlinkx.core.network.api.OwnerApi
 import com.droidlinkx.core.network.api.PublicApi
+import com.droidlinkx.core.network.supabase.SupabaseApis
+import com.droidlinkx.core.network.supabase.SupabaseAuthApi
+import com.droidlinkx.core.network.supabase.SupabaseConfig
+import com.droidlinkx.core.network.supabase.SupabaseDeviceApi
+import com.droidlinkx.core.network.supabase.SupabaseFunctionsApi
+import com.droidlinkx.core.network.supabase.SupabaseHeadersInterceptor
+import com.droidlinkx.core.network.supabase.SupabaseOwnerApi
+import com.droidlinkx.core.network.supabase.SupabasePublicApi
+import com.droidlinkx.core.network.supabase.SupabaseRestApi
+import com.droidlinkx.core.network.supabase.SupabaseStorageApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -38,6 +48,18 @@ annotation class OwnerApiClient
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DeviceApiClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SupabasePublicRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SupabaseOwnerRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SupabaseDeviceRetrofit
 
 /** Supplies the currently configured backend origin, e.g. `https://cloud.example.com/`. */
 fun interface BaseUrlProvider {
@@ -122,9 +144,100 @@ object NetworkModule {
             .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
 
+    /* ---------------------------- Supabase ---------------------------- */
+
     @Provides
     @Singleton
-    fun providePublicApi(retrofit: Retrofit): PublicApi = retrofit.create(PublicApi::class.java)
+    fun provideSupabaseConfig(): SupabaseConfig = SupabaseConfig.fromBuildConfig()
+
+    private fun supabaseClient(
+        logging: HttpLoggingInterceptor,
+        config: SupabaseConfig,
+        tokenProvider: () -> String?,
+    ): OkHttpClient = baseClientBuilder(logging)
+        .addInterceptor(SupabaseHeadersInterceptor(config.anonKey, tokenProvider))
+        .build()
+
+    private fun supabaseRetrofit(moshi: Moshi, client: OkHttpClient, config: SupabaseConfig): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(config.baseUrl)
+            .client(client)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+
+    @Provides
+    @Singleton
+    @SupabasePublicRetrofit
+    fun provideSupabasePublicRetrofit(
+        moshi: Moshi,
+        logging: HttpLoggingInterceptor,
+        config: SupabaseConfig,
+    ): Retrofit = supabaseRetrofit(moshi, supabaseClient(logging, config) { null }, config)
+
+    @Provides
+    @Singleton
+    @SupabaseOwnerRetrofit
+    fun provideSupabaseOwnerRetrofit(
+        moshi: Moshi,
+        logging: HttpLoggingInterceptor,
+        config: SupabaseConfig,
+        tokenProvider: OwnerTokenProvider,
+    ): Retrofit = supabaseRetrofit(moshi, supabaseClient(logging, config, tokenProvider::ownerToken), config)
+
+    @Provides
+    @Singleton
+    @SupabaseDeviceRetrofit
+    fun provideSupabaseDeviceRetrofit(
+        moshi: Moshi,
+        logging: HttpLoggingInterceptor,
+        config: SupabaseConfig,
+        tokenProvider: DeviceTokenProvider,
+    ): Retrofit = supabaseRetrofit(moshi, supabaseClient(logging, config, tokenProvider::deviceToken), config)
+
+    @Provides
+    @Singleton
+    fun provideSupabaseApis(
+        config: SupabaseConfig,
+        @SupabasePublicRetrofit publicRetrofit: Retrofit,
+        @SupabaseOwnerRetrofit ownerRetrofit: Retrofit,
+        @SupabaseDeviceRetrofit deviceRetrofit: Retrofit,
+        ownerTokenProvider: OwnerTokenProvider,
+    ): SupabaseApis = SupabaseApis(
+        publicApi = SupabasePublicApi(
+            config = config,
+            auth = publicRetrofit.create(SupabaseAuthApi::class.java),
+            functions = publicRetrofit.create(SupabaseFunctionsApi::class.java),
+        ),
+        ownerApi = SupabaseOwnerApi(
+            config = config,
+            auth = ownerRetrofit.create(SupabaseAuthApi::class.java),
+            rest = ownerRetrofit.create(SupabaseRestApi::class.java),
+            functions = ownerRetrofit.create(SupabaseFunctionsApi::class.java),
+            ownerToken = { ownerTokenProvider.ownerToken() },
+        ),
+        deviceApi = SupabaseDeviceApi(functions = deviceRetrofit.create(SupabaseFunctionsApi::class.java)),
+    )
+
+    /** Owner-scoped Retrofit for Storage uploads and PostgREST reads used by the transfer engine. */
+    @Provides
+    @Singleton
+    fun provideSupabaseOwnerRest(@SupabaseOwnerRetrofit retrofit: Retrofit): SupabaseRestApi =
+        retrofit.create(SupabaseRestApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSupabaseOwnerFunctions(@SupabaseOwnerRetrofit retrofit: Retrofit): SupabaseFunctionsApi =
+        retrofit.create(SupabaseFunctionsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSupabaseStorage(@SupabaseOwnerRetrofit retrofit: Retrofit): SupabaseStorageApi =
+        retrofit.create(SupabaseStorageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePublicApi(config: SupabaseConfig, supabase: SupabaseApis, retrofit: Retrofit): PublicApi =
+        if (config.isConfigured) supabase.publicApi else retrofit.create(PublicApi::class.java)
 
     @Provides
     @Singleton
@@ -148,11 +261,19 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOwnerApi(@OwnerApiClient retrofit: Retrofit): OwnerApi = retrofit.create(OwnerApi::class.java)
+    fun provideOwnerApi(
+        config: SupabaseConfig,
+        supabase: SupabaseApis,
+        @OwnerApiClient retrofit: Retrofit,
+    ): OwnerApi = if (config.isConfigured) supabase.ownerApi else retrofit.create(OwnerApi::class.java)
 
     @Provides
     @Singleton
-    fun provideDeviceApi(@DeviceApiClient retrofit: Retrofit): DeviceApi = retrofit.create(DeviceApi::class.java)
+    fun provideDeviceApi(
+        config: SupabaseConfig,
+        supabase: SupabaseApis,
+        @DeviceApiClient retrofit: Retrofit,
+    ): DeviceApi = if (config.isConfigured) supabase.deviceApi else retrofit.create(DeviceApi::class.java)
 
     private fun sanitize(url: String): String = if (url.endsWith("/")) url else "$url/"
 }

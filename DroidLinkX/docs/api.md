@@ -1,6 +1,30 @@
-# REST API
+# API
 
-Base URL `https://<host>/api`. All responses are JSON. Errors use
+## Supabase surface (primary)
+
+The app no longer treats a bespoke REST server as the backend. Clients use:
+
+| Surface | Base | Auth | Used for |
+| --- | --- | --- | --- |
+| GoTrue | `/auth/v1` | anon key (+ `Authorization` once signed in) | signup, password grant, refresh, logout, `GET /user` |
+| PostgREST | `/rest/v1` | anon key + owner JWT | devices, permissions, connection sessions/events, files, transfers, transfer items, profiles |
+| Storage | `/storage/v1` | anon key + owner JWT | chunk parts and browser uploads (`x-upsert: true`) |
+| Functions | `/functions/v1` | anon key + owner JWT (or device secret/token) | the 8 privileged operations |
+| Realtime | `wss://…/realtime/v1` | owner JWT | `postgres_changes` + broadcast |
+
+The complete contract table (request/response bodies per function) lives in
+[`docs/supabase.md`](supabase.md#4-edge-function-contracts).
+
+Two PostgREST details matter:
+
+* every table is filtered by RLS, so clients never send `owner_id` filters for security — only for UI;
+* writes that must return the row send `Prefer: return=representation` (the dashboard and the Android
+  client both do this).
+
+# Legacy REST API (optional self-hosted BFF)
+
+Base URL `https://<host>/api`. This server is optional: it exists for LAN/offline deployments and is no
+longer the path used by the shipped dashboard or Android app. All responses are JSON. Errors use
 `{ "error": { "code": "…", "message": "…", "details": … } }` with codes such as `BAD_REQUEST`,
 `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `RATE_LIMITED`, `CONFLICT`, `INTERNAL`.
 

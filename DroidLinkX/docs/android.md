@@ -9,7 +9,8 @@ Gradle 8.14.3 · AGP 8.11.1 · `compileSdk`/`targetSdk` 36 · `minSdk` 26 · JVM
 ```
 :app ──┬─► :feature:dashboard ─┐
        ├─► :feature:devices   ─┼─► :core:domain ◄─ :core:data ─► :core:network
-       ├─► :feature:settings  ─┘        ▲                │  └──► :core:security
+       ├─► :feature:settings  ─┤        ▲                │  └──► :core:security
+       ├─► :feature:transfers ─┘
        │                                │                │  └──► :core:database
        └─► :core:{common,designsystem,domain,data,network,security,database}
 ```
@@ -26,6 +27,38 @@ Gradle 8.14.3 · AGP 8.11.1 · `compileSdk`/`targetSdk` 36 · `minSdk` 26 · JVM
 | `:core:database` | Room v1: `cached_devices`, `connection_events`, `telemetry_outbox` + DAOs |
 
 Feature modules never import transport, SQL or Keystore types.
+
+## Supabase transport
+
+The app talks to Supabase directly; the `service_role` key never enters the APK.
+
+| Concern | Implementation |
+| --- | --- |
+| Identity | `supabase/SupabaseApis.kt` (GoTrue password grant, refresh, logout, `GET /user`) implemented behind the existing `PublicApi`/`OwnerApi` contracts, so repositories and ViewModels are unchanged |
+| Data | PostgREST endpoints in `SupabaseRestApi`; **RLS** scopes every row to the signed-in owner |
+| Privileged actions | the 8 Edge Functions in `SupabaseFunctionsApi` |
+| Uploads | `SupabaseStorageApi` PUT with the owner JWT (`x-upsert: true`) |
+| Live state | Supabase Realtime (`postgres_changes` + broadcast on `owner:<uuid>`) |
+| Media | `signaling/` relay only |
+
+`NetworkModule` selects the Supabase implementation when `SUPABASE_URL` + `SUPABASE_ANON_KEY` are set
+(Gradle properties `droidlinkx.supabase.url` / `droidlinkx.supabase.anonKey`, or the environment
+variables `SUPABASE_URL` / `SUPABASE_ANON_KEY`, plus `SIGNALING_URL`). Without them the app falls back to
+the legacy self-hosted BFF so LAN installs keep working.
+
+## Transfers and file manager (Phase 4)
+
+* `:feature:transfers` — 8 MiB chunk upload picker (SAF `OpenMultipleDocuments`), live progress, pause /
+  resume / cancel, cloud file list with signed download links and delete.
+* `:core:data` — `SupabaseTransferRepository`: `initiate-transfer` → stream each chunk from the content
+  URI, PUT it to `droidlinkx-transfers/‹owner›/‹transfer›/parts/‹index›/‹n›.part`, patch
+  `transfer_items` for live progress, then call `finalize-transfer` with the SHA-256 of the whole file.
+* Resumability: the durable queue lives in Room (`transfer_queue`, `transfer_files`, schema v2 with a
+  hand-written `MIGRATION_1_2`). `resumePending()` restarts unfinished transfers on app launch; parts are
+  idempotent, so a killed process resumes at the last acknowledged chunk.
+* Integrity: the digest is computed in a separate streaming pass, so a resumed transfer still verifies —
+  the server compares size **and** SHA-256 and answers `409 checksum_mismatch` on mismatch.
+* Memory: chunks are 8 MiB byte arrays, hashing uses a 256 KiB buffer; nothing loads a whole file.
 
 ## Startup sequence
 
@@ -104,5 +137,18 @@ cd android
 ./gradlew test
 ```
 
-Set the backend URL in the app (Profile → Server configuration) when testing on a physical device; debug
-builds allow cleartext only via `app/src/debug/res/xml/network_security_config.xml`.
+Point the build at your Supabase project (public values only):
+
+```bash
+# ~/.gradle/gradle.properties or android/gradle.properties
+droidlinkx.supabase.url=https://YOUR-PROJECT.supabase.co
+droidlinkx.supabase.anonKey=your-anon-key
+droidlinkx.signaling.url=wss://signal.example.com
+```
+
+or export `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SIGNALING_URL` before invoking Gradle. Debug builds allow
+cleartext only via `app/src/debug/res/xml/network_security_config.xml` (needed for a local
+`http://10.0.2.2:54321` Supabase and `ws://10.0.2.2:8090` relay).
+
+> Verified statically: this sandbox has no JDK/Android SDK, so the Kotlin sources have not been compiled
+> here. Run `./gradlew :app:assembleDebug` once in Android Studio to confirm the toolchain.

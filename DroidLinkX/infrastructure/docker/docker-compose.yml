@@ -64,6 +64,30 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
 
+  signaling:
+    build:
+      context: ../../signaling
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8090
+      SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL in .env}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?set SUPABASE_SERVICE_ROLE_KEY in .env}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
+      DEVICE_JWT_SECRET: ${DEVICE_JWT_SECRET:?set DEVICE_JWT_SECRET in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://cloud.example.com}
+      HEARTBEAT_MS: ${HEARTBEAT_MS:-30000}
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-2000}
+    ports:
+      - "127.0.0.1:8090:8090"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8090/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   dashboard:
     build:
       context: ../../dashboard

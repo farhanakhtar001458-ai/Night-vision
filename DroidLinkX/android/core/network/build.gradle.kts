@@ -11,6 +11,10 @@ android {
     defaultConfig {
         minSdk = 26
         buildConfigField("String", "API_BASE_URL", "\"https://api.droidlinkx.local/\"")
+        // Supplied from gradle.properties / local.properties / environment at build time.
+        buildConfigField("String", "SUPABASE_URL", "\"${supabaseUrl()}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${supabaseAnonKey()}\"")
+        buildConfigField("String", "SIGNALING_URL", "\"${signalingUrl()}\"")
     }
     buildFeatures { buildConfig = true }
     compileOptions {
@@ -19,6 +23,15 @@ android {
     }
     kotlin { jvmToolchain(17) }
 }
+
+fun gradleProperty(name: String, envName: String): String =
+    (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() }
+        ?: System.getenv(envName)?.takeIf { it.isNotBlank() }
+        ?: ""
+
+fun supabaseUrl(): String = gradleProperty("droidlinkx.supabase.url", "SUPABASE_URL")
+fun supabaseAnonKey(): String = gradleProperty("droidlinkx.supabase.anonKey", "SUPABASE_ANON_KEY")
+fun signalingUrl(): String = gradleProperty("droidlinkx.signaling.url", "SIGNALING_URL")
 
 dependencies {
     implementation(project(":core:common"))

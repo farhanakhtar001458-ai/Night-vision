@@ -69,3 +69,22 @@ cd android
 * `GET /api/devices` with 50 devices < 150 ms locally.
 * 100 MiB transfer in 8 MiB chunks completes with constant memory in the backend (`rss` stable).
 * WebSocket: 50 concurrent device sockets, 1 heartbeat/s, no message loss in the hub fan-out.
+
+## Supabase + signalling (added with the backend migration)
+
+```bash
+# database: migrations + RLS assertions on plain PG16, no Docker required
+createdb droidlinkx
+psql -v ON_ERROR_STOP=1 -f supabase/tests/local_stub.sql
+for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$f"; done
+psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_test.sql          # -> RLS TESTS PASSED (21 assertions)
+
+# edge functions (plain tsc + deno shim; no Deno needed)
+cd supabase/functions && ./typecheck.sh
+
+# signalling relay
+cd signaling && npx tsc -p tsconfig.json --noEmit && npx vitest run   # 18 passed
+
+# dashboard (Supabase client + realtime)
+cd dashboard && npm run build                                          # tsc -b + vite build
+```

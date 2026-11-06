@@ -1,11 +1,31 @@
 # Architecture
 
+## Backend topology (Supabase is the source of truth)
+
+| Layer | Owner of state | Notes |
+| --- | --- | --- |
+| Identity | **Supabase Auth (GoTrue)** | email/password, email confirmation, refresh rotation, global sign-out. There is no second user table and no custom JWT issuer. |
+| Relational data | **Supabase Postgres (`public`)** | `profiles, devices, device_sessions, device_permissions, connection_sessions, file_transfers, transfer_items, files, notifications, clipboard, activity`. RLS on every table. |
+| Binaries | **Supabase Storage** | private buckets `droidlinkx-files`, `droidlinkx-transfers`; first path segment pinned to `auth.uid()`. |
+| Live state | **Supabase Realtime** | `postgres_changes` under RLS plus private broadcast topics `owner:<uuid>`, `device:<uuid>`. |
+| Privileged logic | **8 Edge Functions** | `service_role` lives only here. Every function re-checks ownership server-side. |
+| Media | **WebRTC via `signaling/` + coturn** | SDP/ICE only through the relay; video/audio never touches the database. |
+
+Request flow for an upload from the dashboard: `initiate-transfer` (ownership + quota check, creates
+`file_transfers`/`transfer_items`, returns signed upload targets) → browser writes 8 MiB parts directly
+to Storage with the owner JWT → `finalize-transfer` verifies size + SHA-256, assembles the object, deletes
+parts → the `sync_transfer_progress` trigger updates aggregates, writes `transfer_history` and upserts
+`files` → Realtime pushes the new rows to every open client.
+
+
 ## Components
 
 | Component | Technology | Responsibility |
 | --- | --- | --- |
 | Android app | Kotlin 2.1, Compose Material 3, Hilt, Room, DataStore, OkHttp/Retrofit, WorkManager | Owner sign-in, automatic enrollment, foreground cloud link, presence/telemetry, device management UI |
-| Backend | Node 22, Express 5, ws 8, pg, ioredis, zod, pino | REST API, authenticated WebSocket relay, WebRTC signalling, transfer chunk store, audit log |
+| Supabase | Postgres 16, GoTrue, Storage, Realtime, Edge Functions (Deno) | **Primary backend**: identity, relational data, binaries, live state, privileged operations |
+| Signalling relay | Node 22, ws 8, jose, zod | Authenticated WebSocket upgrade, presence, SDP/ICE relay between owner and device (no media) |
+| Backend (optional) | Node 22, Express 5, pg, ioredis | Self-hosted/LAN BFF kept for offline deployments; not a source of truth |
 | Dashboard | React 19, TypeScript, Vite, Tailwind | 12-page owner console: devices, files, transfers, mirroring, notifications, security, activity, settings |
 | PostgreSQL 16 | relational store | users, devices, credentials, sessions, permissions, transfers, notifications, activity, refresh tokens, connection events |
 | Redis 7 | cache / presence TTL / rate limits / revocation | `presence`, `revoked:token:<jti>`, rate-limit counters, clipboard relay buffer |

@@ -8,6 +8,8 @@ import androidx.room.Transaction
 import com.droidlinkx.core.database.entity.CachedDeviceEntity
 import com.droidlinkx.core.database.entity.ConnectionEventEntity
 import com.droidlinkx.core.database.entity.TelemetryOutboxEntity
+import com.droidlinkx.core.database.entity.TransferFileEntity
+import com.droidlinkx.core.database.entity.TransferQueueEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -67,4 +69,49 @@ interface TelemetryOutboxDao {
     suspend fun clearAll() {
         delete(pending(500).map { it.id })
     }
+}
+
+@Dao
+interface TransferDao {
+    @Query("SELECT * FROM transfer_queue ORDER BY createdAtEpochMillis DESC")
+    fun observeTransfers(): Flow<List<TransferQueueEntity>>
+
+    @Query("SELECT * FROM transfer_files WHERE transferId = :transferId ORDER BY itemIndex ASC")
+    fun observeFiles(transferId: String): Flow<List<TransferFileEntity>>
+
+    @Query("SELECT * FROM transfer_files ORDER BY updatedAtEpochMillis DESC LIMIT 200")
+    fun observeAllFiles(): Flow<List<TransferFileEntity>>
+
+    @Query("SELECT * FROM transfer_queue WHERE status IN ('queued', 'running', 'paused') ORDER BY createdAtEpochMillis ASC")
+    suspend fun pendingTransfers(): List<TransferQueueEntity>
+
+    @Query("SELECT * FROM transfer_files WHERE transferId = :transferId ORDER BY itemIndex ASC")
+    suspend fun files(transferId: String): List<TransferFileEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertTransfer(transfer: TransferQueueEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertFiles(files: List<TransferFileEntity>)
+
+    @Query("UPDATE transfer_queue SET status = :status, error = :error, updatedAtEpochMillis = :now WHERE transferId = :transferId")
+    suspend fun setTransferState(transferId: String, status: String, error: String?, now: Long)
+
+    @Query("UPDATE transfer_queue SET transferredBytes = :transferred, updatedAtEpochMillis = :now WHERE transferId = :transferId")
+    suspend fun setTransferred(transferId: String, transferred: Long, now: Long)
+
+    @Query(
+        "UPDATE transfer_files SET bytesSent = :bytes, chunksSent = :chunks, status = :status, " +
+            "sha256 = COALESCE(:sha256, sha256), updatedAtEpochMillis = :now WHERE id = :id"
+    )
+    suspend fun updateFileProgress(id: String, bytes: Long, chunks: Int, status: String, sha256: String?, now: Long)
+
+    @Query("UPDATE transfer_files SET status = :status, error = :error, updatedAtEpochMillis = :now WHERE id = :id")
+    suspend fun setFileError(id: String, status: String, error: String?, now: Long)
+
+    @Query("DELETE FROM transfer_queue WHERE transferId = :transferId")
+    suspend fun deleteTransfer(transferId: String)
+
+    @Query("DELETE FROM transfer_files WHERE transferId = :transferId")
+    suspend fun deleteFiles(transferId: String)
 }

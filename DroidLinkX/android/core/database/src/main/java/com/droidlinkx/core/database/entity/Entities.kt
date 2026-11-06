@@ -49,3 +49,41 @@ data class TelemetryOutboxEntity(
     val createdAtEpochMillis: Long,
     val attempts: Int = 0,
 )
+
+/**
+ * Durable transfer queue. Each row mirrors one `file_transfers` row so an interrupted upload can be
+ * resumed after process death: chunk parts are idempotent, so re-sending the tail is always safe.
+ */
+@Entity(tableName = "transfer_queue")
+data class TransferQueueEntity(
+    @PrimaryKey val transferId: String,
+    val direction: String,
+    val status: String,
+    val totalBytes: Long,
+    val transferredBytes: Long,
+    val chunkSize: Long,
+    val targetDeviceId: String?,
+    val error: String?,
+    val createdAtEpochMillis: Long,
+    val updatedAtEpochMillis: Long,
+)
+
+/** One file inside a queued transfer, including the local content URI it is read from. */
+@Entity(
+    tableName = "transfer_files",
+    indices = [Index("transferId"), Index("status")],
+)
+data class TransferFileEntity(
+    @PrimaryKey val id: String,
+    val transferId: String,
+    val itemIndex: Int,
+    val name: String,
+    val size: Long,
+    val contentUri: String,
+    val sha256: String?,
+    val status: String,
+    val bytesSent: Long,
+    val chunksSent: Int,
+    val error: String?,
+    val updatedAtEpochMillis: Long,
+)

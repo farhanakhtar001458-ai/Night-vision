@@ -186,6 +186,8 @@ data class SignalingConfigDto(
     val turnConfigured: Boolean = false,
     val stunUrls: List<String> = emptyList(),
     val turnUrls: List<String> = emptyList(),
+    /** WebRTC signalling relay origin; video never travels through the database. */
+    val signalingUrl: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

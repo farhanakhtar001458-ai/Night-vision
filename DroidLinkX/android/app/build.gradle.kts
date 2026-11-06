@@ -58,6 +58,7 @@ dependencies {
     implementation(project(":feature:dashboard"))
     implementation(project(":feature:devices"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:transfers"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

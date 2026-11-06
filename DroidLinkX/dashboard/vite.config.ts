@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
-const backend = process.env.BACKEND_URL ?? 'http://127.0.0.1:8080';
+// Data/auth/storage go straight to Supabase (VITE_SUPABASE_URL); only the WebRTC signalling relay
+// needs a local development proxy. Set SIGNALING_URL to point elsewhere.
+const signaling = process.env.SIGNALING_URL ?? 'http://127.0.0.1:8090';
 
 export default defineConfig({
   plugins: [react()],
@@ -16,8 +18,7 @@ export default defineConfig({
     // The sandbox preview is served from a proxied host, so any host header is acceptable here.
     allowedHosts: true,
     proxy: {
-      '/api': { target: backend, changeOrigin: true, ws: false },
-      '/ws': { target: backend.replace(/^http/, 'ws'), ws: true, changeOrigin: true },
+      '/ws': { target: signaling.replace(/^http/, 'ws'), ws: true, changeOrigin: true },
     },
   },
   preview: {

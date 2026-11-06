@@ -197,6 +197,10 @@ export function SecurityPage() {
         <GlassCard className="p-0">
           <div className="border-b border-white/[0.06] p-4">
             <h2 className="text-sm font-semibold text-slate-100">Browser sessions</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Supabase Auth owns browser refresh tokens. Per-browser enumeration is not exposed to the
+              client; &ldquo;Sign out everywhere&rdquo; revokes them globally.
+            </p>
             <p className="mt-1 text-[11px] text-slate-500">Refresh tokens rotate on use; reuse of a rotated token revokes the whole family.</p>
           </div>
           <ul className="divide-y divide-white/[0.05]">

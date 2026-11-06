@@ -51,6 +51,7 @@ import com.droidlinkx.core.designsystem.theme.DroidLinkTheme
 import com.droidlinkx.feature.dashboard.DashboardRoute
 import com.droidlinkx.feature.devices.DevicesRoute
 import com.droidlinkx.feature.settings.SettingsRoute
+import com.droidlinkx.feature.transfers.TransfersRoute
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -150,7 +151,7 @@ fun DroidLinkApp(authViewModel: AuthViewModel = hiltViewModel()) {
                 )
             }
             composable(Tab.Devices.route) { DevicesRoute() }
-            composable(Tab.Transfer.route) { PhasePlaceholder("Transfers", "Chunked, resumable transfers with checksum verification arrive in the next development phase. The backend endpoints, progress events and dashboard are already live.") }
+            composable(Tab.Transfer.route) { TransfersRoute() }
             composable(Tab.Tools.route) { PhasePlaceholder("Tools", "File manager, screen mirroring, remote camera, notification and clipboard tools are being delivered phase by phase. Nothing here is a mock: unfinished tools are not exposed.") }
             composable(Tab.Profile.route) {
                 SettingsRoute(

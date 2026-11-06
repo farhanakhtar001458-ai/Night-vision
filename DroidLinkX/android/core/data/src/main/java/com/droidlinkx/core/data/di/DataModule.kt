@@ -10,6 +10,7 @@ import com.droidlinkx.core.data.settings.BaseUrlCache
 import com.droidlinkx.core.data.settings.DeviceSettingsRepositoryImpl
 import com.droidlinkx.core.data.startup.StartupCoordinatorImpl
 import com.droidlinkx.core.data.telemetry.TelemetryRepositoryImpl
+import com.droidlinkx.core.data.transfer.SupabaseTransferRepository
 import com.droidlinkx.core.domain.repository.ConnectionRepository
 import com.droidlinkx.core.domain.repository.DeviceCatalogueRepository
 import com.droidlinkx.core.domain.repository.DeviceRegistrationRepository
@@ -19,6 +20,7 @@ import com.droidlinkx.core.domain.repository.LinkServiceController
 import com.droidlinkx.core.domain.repository.OwnerAuthRepository
 import com.droidlinkx.core.domain.repository.StartupCoordinator
 import com.droidlinkx.core.domain.repository.TelemetryRepository
+import com.droidlinkx.core.domain.repository.TransferRepository
 import com.droidlinkx.core.network.RealtimeSocket
 import com.droidlinkx.core.network.di.BaseUrlProvider
 import com.droidlinkx.core.network.di.DeviceTokenProvider
@@ -76,6 +78,10 @@ abstract class DataModule {
     @Singleton
     abstract fun bindLinkServiceController(impl: ConnectionServiceController): LinkServiceController
 
+    @Binds
+    @Singleton
+    abstract fun bindTransferRepository(impl: SupabaseTransferRepository): TransferRepository
+
     companion object {
 
         @Provides
@@ -111,7 +117,10 @@ abstract class DataModule {
                 if (token.isNullOrBlank()) {
                     null
                 } else {
-                    val httpBase = cache.baseUrl.ifBlank { storage.deviceCredentials()?.wsUrl.orEmpty() }
+                    // The signalling relay origin issued by create-session wins: it is the only
+                    // WebSocket the device is allowed to open for WebRTC signalling.
+                    val httpBase = storage.deviceCredentials()?.wsUrl?.takeIf { it.isNotBlank() }
+                        ?: cache.baseUrl
                     val wsBase = httpBase
                         .replaceFirst("https://", "wss://")
                         .replaceFirst("http://", "ws://")

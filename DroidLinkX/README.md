@@ -4,63 +4,88 @@ A private, self-hosted device-management ecosystem for **your own** Android devi
 product with no third-party accounts, no hidden control and no telemetry leaving your server.
 
 ```
-┌─────────────────────┐        HTTPS / REST        ┌──────────────────────────┐
-│  Android app        │ ─────────────────────────► │  Node 22 + Express 5     │
-│  Kotlin + Compose   │ ◄───────────────────────── │  REST + WebSocket + WS   │
-│  Material 3         │        WSS (device link)   │  relay + TURN creds      │
-└─────────┬───────────┘                            └────────────┬─────────────┘
-          │ WebRTC (STUN/TURN, per-connection creds)            │ pg / redis
-          ▼                                                     ▼
-┌─────────────────────┐                            ┌──────────────────────────┐
-│  Your other Android │                            │  PostgreSQL 16 + Redis 7 │
-│  devices            │                            └──────────────────────────┘
-└─────────────────────┘                                        ▲
-                                                  ┌────────────┴─────────────┐
-                                                  │  React dashboard (Vite)  │
-                                                  │  12 pages, glass UI      │
-                                                  └──────────────────────────┘
+┌─────────────────────┐   Supabase Auth + PostgREST + Storage   ┌──────────────────────────┐
+│  Android app        │ ──────────────────────────────────────► │  Supabase (primary)       │
+│  Kotlin + Compose   │ ◄────────────────────────────────────── │  Postgres + RLS           │
+│  Material 3         │      Supabase Realtime (state only)     │  Auth (GoTrue)            │
+└─────────┬───────────┘                                         │  Storage (2 buckets)      │
+          │ WebRTC (STUN/TURN, per-connection creds)            │  8 Edge Functions         │
+          ▼                                                     └────────────┬─────────────┘
+┌─────────────────────┐        SDP / ICE over WSS                           │
+│  Your other Android │ ◄──────────────────────────────► ┌──────────────────▼───────────┐
+│  devices            │                                  │  Signalling relay (:8090)    │
+└─────────────────────┘                                  │  auth + presence + relay     │
+                                                         └──────────────────────────────┘
+┌─────────────────────┐   anon key + owner JWT (RLS)
+│  React dashboard    │ ──────────────────────────────────► Supabase
+└─────────────────────┘
 ```
 
 ## Repository layout
 
 | Path | What it is |
 | --- | --- |
-| `backend/` | Node 22 / TypeScript backend: auth, device registry, presence, WebSocket relay, WebRTC signalling, file & chunked transfer APIs, notifications, clipboard, activity, audit. |
-| `dashboard/` | React + Vite + Tailwind dashboard (12 pages) with real-time updates. |
+| `supabase/` | **Primary backend**: 5 SQL migrations, RLS on every table, 2 storage buckets, Realtime publication, 8 Edge Functions, executable RLS tests. |
+| `signaling/` | Dedicated WebRTC signalling relay (Node 22 + ws, 18 tests): authenticated upgrade, presence, SDP/ICE relay, rate limiting. |
+| `backend/` | Optional self-hosted BFF retained for offline/LAN deployments; it is **not** the source of truth and shares no schema with Supabase. |
+| `dashboard/` | React + Vite + Tailwind dashboard (12 pages) talking to Supabase Auth/PostgREST/Storage/Realtime with the anon key. |
 | `android/` | Android Studio project: Kotlin, Jetpack Compose Material 3, Hilt, Room, DataStore, OkHttp, WorkManager. |
-| `infrastructure/` | docker-compose stack (Postgres, Redis, backend, dashboard, coturn), TURN config, SQL schema. |
+| `infrastructure/` | docker-compose stack (signalling relay, dashboard, coturn) plus TURN config. Supabase itself is hosted or run with `supabase start`. |
 | `docs/` | Architecture, API, WebSocket protocol, database, security, installation, deployment, testing, Android and roadmap documents. |
 
-## Quick start (Docker)
+## Quick start (Supabase)
 
 ```bash
-cp infrastructure/docker/.env.example infrastructure/docker/.env   # fill in secrets
-docker compose --env-file infrastructure/docker/.env -f infrastructure/docker/docker-compose.yml up -d --build
-curl -fsS http://127.0.0.1:8080/api/health
+# 1. database + functions
+supabase link --project-ref <project-ref>
+supabase db push
+supabase secrets set DEVICE_JWT_SECRET=$(openssl rand -hex 32) SIGNALING_URL=wss://signal.example.com \
+  TURN_URLS="turn:turn.example.com:3478?transport=udp" TURN_SECRET=$(openssl rand -hex 32) \
+  APP_ORIGINS=https://cloud.example.com
+supabase functions deploy enroll-device revoke-device create-session authorize-connection \
+  initiate-transfer generate-secure-download update-device-status finalize-transfer
+
+# 2. dashboard
+cd dashboard && cp .env.example .env      # VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY / VITE_SIGNALING_URL
+npm install && npm run dev                 # http://localhost:5173
+
+# 3. signalling relay
+cd ../signaling && cp .env.example .env && npm ci && npm run dev   # ws://localhost:8090/ws
 ```
 
-Then create the owner account (open `http://<host>:8081`, choose **Create account**). Every additional
-Android device that signs in with the same owner account enrolls itself automatically — there is no QR
-step and no device sharing.
+Full walkthrough — schema, policies, secrets, storage, realtime, verification: **`docs/supabase.md`**.
+
+Then create the owner account (open the dashboard, choose **Create account**; Supabase Auth confirms the
+address when email confirmation is enabled). Every additional Android device that signs in with the same
+owner account enrolls itself automatically — there is no QR step and no device sharing.
 
 ## Local development
 
 ```bash
-# backend
-cd backend && cp .env.example .env && npm install && npm run migrate && npm run dev   # :8080
+# local Supabase (requires Docker) — or point at a hosted project
+supabase start
+supabase db reset                       # migrations + seed
+supabase functions serve
 
 # dashboard
-cd dashboard && npm install && npm run dev                                          # :5173, proxies /api + /ws
+cd dashboard && cp .env.example .env && npm install && npm run dev   # :5173, proxies /ws to :8090
 
-# tests
-cd backend && npx vitest run                                                        # 43 tests
-cd dashboard && npm run build
+# signalling relay
+cd signaling && cp .env.example .env && npm ci && npm run dev       # :8090
+
+# checks
+cd signaling && npx vitest run && npx tsc --noEmit                  # 18 tests
+cd ../supabase/functions && ./typecheck.sh                          # 0 errors
+cd ../dashboard && npm run build
 ```
 
-Android: open `android/` in Android Studio (JDK 17, AGP 8.11.1, compileSdk 36). Debug builds default to
-`http://10.0.2.2:8080/`; the server URL is editable in **Settings → Server configuration**.
+Android: open `android/` in Android Studio (JDK 17, AGP 8.11.1, compileSdk 36). The app reads the
+Supabase project from Gradle properties (`droidlinkx.supabase.url`, `droidlinkx.supabase.anonKey`,
+`droidlinkx.signaling.url`) or the `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SIGNALING_URL` environment
+variables. Only the **anon** key is compiled into the APK.
 
-See `docs/installation.md` for prerequisites and `docs/android.md` for the module graph.
+See `docs/installation.md` for prerequisites, `docs/android.md` for the module graph and the transfer
+engine, and `docs/supabase.md` for the backend.
 
 ## Status
 
@@ -69,7 +94,7 @@ See `docs/installation.md` for prerequisites and `docs/android.md` for the modul
 | 1 | Backend: schema, auth, devices, presence, WebSocket, signalling, files, transfers, notifications, activity | ✅ implemented, 43 tests green |
 | 2 | React dashboard: 12 pages, real API + WS, WebRTC viewer, chunked uploader | ✅ implemented, production build green |
 | 3 | Android: Gradle/Hilt/Compose app, encrypted vault, enrollment, cloud link, dashboard/devices/settings | ✅ code complete (compiled only in Android Studio — this sandbox has no JDK/Android SDK) |
-| 4 | File manager, resumable transfers on Android (SAF) | ⏳ next |
+| 4 | File manager + resumable 8 MiB transfers on Android (SAF), SHA-256 verified by `finalize-transfer` | ✅ implemented (Gradle build required — no JDK/Android SDK in this sandbox) |
 | 5 | Screen mirroring (MediaProjection + WebRTC) | ⏳ |
 | 6 | Remote camera, notifications, clipboard, accessibility control | ⏳ |
 | 7 | Offline/mDNS mode, hardening, accessibility polish | ⏳ |
@@ -80,8 +105,10 @@ tools that are not built yet are not exposed as controls.
 
 ## Security highlights
 
-* Owner passwords hashed with scrypt; access tokens are short-lived JWTs with server-side revocation
-  (`revoked:token:<jti>`); refresh tokens rotate with reuse detection and family revocation.
+* Supabase Auth owns credentials and refresh tokens; the app and dashboard hold only the anon key, so
+  `service_role` never leaves the server. 21 RLS assertions run in CI-able SQL (`supabase/tests`).
+* Device secrets are stored as hashes (`device_credentials`, service-role only) and exchanged once for a
+  short-lived device token bound to a revocable `device_sessions` row.
 * Devices authenticate with a device secret, exchanged for a *device-scoped* JWT bound to a revocable
   `device_sessions` row. Presence is only reported online when a live, authenticated socket exists.
 * Device secrets never leave the device unencrypted: Android Keystore AES-256-GCM via
@@ -96,6 +123,7 @@ Full document: `docs/security.md`.
 
 | Document | Contents |
 | --- | --- |
+| `docs/supabase.md` | Supabase setup: migrations, RLS, storage, realtime, functions, signalling |
 | `docs/architecture.md` | Components, request flows, failure handling |
 | `docs/api.md` | Every REST endpoint with auth scope and payloads |
 | `docs/websocket.md` | Handshake, event catalogue, heartbeat, close codes |
