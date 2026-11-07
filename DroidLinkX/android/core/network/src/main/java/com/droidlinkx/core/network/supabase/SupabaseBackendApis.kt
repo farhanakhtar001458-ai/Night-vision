@@ -105,8 +105,8 @@ private fun SupabaseUserDto.toDto(): UserDto = UserDto(
 )
 
 private fun SupabaseSessionDto.toAuthResponse(): AuthResponseDto {
-    val user = user ?: throw IOException("Supabase returned a session without a user")
-    if (accessToken.isBlank()) throw IOException("Confirm your email address before signing in")
+    val user = user ?: throw IllegalStateException("Supabase returned a session without a user")
+    if (accessToken.isBlank()) throw IllegalStateException("Confirm your email address before signing in")
     return AuthResponseDto(
         user = user.toDto(),
         tokens = TokenPayloadDto(

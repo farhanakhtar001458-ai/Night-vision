@@ -69,7 +69,23 @@ class AuthViewModel @Inject constructor(
             error.value = null
             when (val result = ownerAuth.register(email, password, displayName)) {
                 is Outcome.Success -> completeEnrollment()
-                is Outcome.Failure -> error.value = result.message
+                is Outcome.Failure -> {
+                    // "Create account" on an email that already exists should just sign the owner in;
+                    // asking someone to retype credentials they already entered is busywork.
+                    if (result.code == "user_already_exists" || result.code == "email_exists") {
+                        info.value = "This email is already registered — signing you in…"
+                        when (val login = ownerAuth.login(email, password)) {
+                            is Outcome.Success -> completeEnrollment()
+                            is Outcome.Failure -> {
+                                info.value = null
+                                error.value = "This email already has an account. Use the Sign in tab " +
+                                    "(or reset the password). ${login.message}"
+                            }
+                        }
+                    } else {
+                        error.value = result.message
+                    }
+                }
             }
             busy.value = false
         }

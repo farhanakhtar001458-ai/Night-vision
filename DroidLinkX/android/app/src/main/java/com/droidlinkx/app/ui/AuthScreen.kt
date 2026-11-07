@@ -143,7 +143,7 @@ fun AuthScreen(
 
         Spacer(Modifier.height(18.dp))
         Text(
-            "Passwords are hashed with scrypt on the server. Device credentials are stored in the Android Keystore and never leave this device in plain text.",
+            "Passwords are hashed by Supabase Auth (bcrypt) — the app never stores them. Device credentials live in the Android Keystore and never leave this phone in plain text.",
             style = MaterialTheme.typography.labelSmall,
             color = DroidLinkColors.TextSecondary,
         )

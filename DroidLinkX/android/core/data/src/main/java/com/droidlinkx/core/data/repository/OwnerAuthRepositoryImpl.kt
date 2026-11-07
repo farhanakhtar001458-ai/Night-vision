@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -133,12 +134,7 @@ class OwnerAuthRepositoryImpl @Inject constructor(
     private suspend fun <T> runCatchingOutcome(block: suspend () -> T): Outcome<T> = try {
         Outcome.Success(block())
     } catch (http: HttpException) {
-        Outcome.Failure(
-            message = http.readableMessage(),
-            code = "HTTP_${http.code()}",
-            httpStatus = http.code(),
-            cause = http,
-        )
+        http.readableFailure()
     } catch (io: IOException) {
         Outcome.Failure(
             message = "Cannot reach the DroidLink X server. Check the server URL and your connection.",
@@ -149,12 +145,44 @@ class OwnerAuthRepositoryImpl @Inject constructor(
         t.toFailure("Unexpected failure")
     }
 
-    private fun HttpException.readableMessage(): String = when (code()) {
-        401 -> "Invalid email or password."
-        409 -> "An account with this email already exists."
-        422 -> "Please check the values you entered."
-        429 -> "Too many attempts. Please wait and try again."
-        else -> "Server error (HTTP ${code()})."
+    /**
+     * GoTrue reports a machine-readable `error_code` next to the human message. Those codes are what
+     * make sign-in failures actionable ("already registered", "confirmation required", "rate
+     * limited") instead of a generic "server error".
+     */
+    private fun HttpException.readableFailure(): Outcome.Failure {
+        val raw = runCatching { response()?.errorBody()?.string() }.getOrNull().orEmpty()
+        val body = runCatching { JSONObject(raw) }.getOrNull()
+        val errorCode = body?.optString("error_code").orEmpty()
+            .ifBlank { body?.optString("code").orEmpty() }
+            .ifBlank { body?.optString("error").orEmpty() }
+        val serverMessage = body?.optString("msg").orEmpty()
+            .ifBlank { body?.optString("message").orEmpty() }
+            .ifBlank { body?.optString("error_description").orEmpty() }
+
+        val message = when {
+            errorCode in setOf("user_already_exists", "email_exists") ->
+                "This email is already registered — signing you in instead."
+            errorCode in setOf("over_email_send_rate_limit", "over_request_rate_limit", "over_sms_send_rate_limit") ->
+                "Too many attempts in a short time. Wait a minute and try again — or switch to Sign in, the account may already exist."
+            errorCode == "email_not_confirmed" -> "Confirm your email address, then sign in."
+            errorCode == "invalid_credentials" -> "Invalid email or password."
+            errorCode == "weak_password" -> "Choose a stronger password (at least 10 characters)."
+            errorCode == "signup_disabled" -> "New sign-ups are disabled for this project."
+            serverMessage.isNotBlank() -> serverMessage
+            code() == 401 -> "Invalid email or password."
+            code() == 409 -> "An account with this email already exists."
+            code() == 429 -> "Too many attempts. Wait a minute and try again."
+            code() in 500..599 -> "The backend is not responding right now (HTTP ${code()})."
+            else -> "Request failed (HTTP ${code()})."
+        }
+
+        return Outcome.Failure(
+            message = message,
+            code = errorCode.ifBlank { "HTTP_${code()}" },
+            httpStatus = code(),
+            cause = this,
+        )
     }
 
     companion object {
