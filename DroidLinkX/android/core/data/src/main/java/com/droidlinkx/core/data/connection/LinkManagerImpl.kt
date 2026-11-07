@@ -14,6 +14,7 @@ import com.droidlinkx.core.domain.repository.DeviceRegistrationRepository
 import com.droidlinkx.core.domain.repository.LinkManager
 import com.droidlinkx.core.domain.repository.TelemetryRepository
 import com.droidlinkx.core.network.RealtimeSocket
+import com.droidlinkx.core.network.supabase.SupabaseConfig
 import com.droidlinkx.core.network.SocketEvent
 import com.droidlinkx.core.network.SocketState
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +51,7 @@ class LinkManagerImpl @Inject constructor(
     private val deviceDao: DeviceDao,
     private val connectionEventDao: ConnectionEventDao,
     private val settings: DeviceSettingsRepositoryImpl,
+    private val supabaseConfig: SupabaseConfig,
 ) : LinkManager {
 
     private val _status = MutableStateFlow(LinkStatus())
@@ -84,6 +86,16 @@ class LinkManagerImpl @Inject constructor(
                     }
                     is com.droidlinkx.core.domain.model.Outcome.Success -> Unit
                 }
+            }
+            // No signalling relay deployed (SIGNALING_URL empty): the device is still fully
+            // reachable through Supabase (PostgREST + realtime), so report a healthy cloud link
+            // instead of retrying a WebSocket that does not exist.
+            if (supabaseConfig.signalingUrl.isBlank()) {
+                if (telemetryJob?.isActive != true) {
+                    telemetryJob = scope.launch { telemetryLoop() }
+                }
+                _status.value = LinkStatus(LinkState.Authenticated)
+                return
             }
             if (eventCollectorJob?.isActive != true) {
                 eventCollectorJob = scope.launch { collectSocketEvents() }

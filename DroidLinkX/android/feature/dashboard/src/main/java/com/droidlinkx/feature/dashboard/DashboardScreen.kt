@@ -111,7 +111,7 @@ fun DashboardScreen(
                         style = MaterialTheme.typography.headlineMedium,
                     )
                     Spacer(Modifier.height(2.dp))
-                    Text("verified sockets", style = MaterialTheme.typography.labelSmall, color = DroidLinkColors.TextSecondary)
+                    Text("devices online", style = MaterialTheme.typography.labelSmall, color = DroidLinkColors.TextSecondary)
                 }
                 DroidCard(modifier = Modifier.weight(1f)) {
                     SectionLabel("This device")
@@ -207,7 +207,7 @@ private fun LinkCard(state: DashboardUiState, onReconnect: () -> Unit) {
         LinkState.Connecting -> Triple("Connecting…", "Authenticating this device", false)
         LinkState.Reconnecting -> Triple("Reconnecting", state.link.lastError ?: "Network interrupted — retrying with backoff", false)
         LinkState.AuthorizationFailed -> Triple("Authorization failed", state.link.lastError ?: "Re-enroll this device", false)
-        LinkState.Disconnected -> Triple("Offline", state.link.lastError ?: "Not connected to the cloud", false)
+        LinkState.Disconnected -> Triple("Not connected", state.link.lastError ?: "Open Settings and run the connection test", false)
     }
     DroidCard {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

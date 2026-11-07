@@ -47,6 +47,7 @@ fun SettingsRoute(
     SettingsScreen(
         state = state,
         onSaveServerUrl = viewModel::saveServerUrl,
+        onTestConnection = viewModel::testConnection,
         onTelemetryInterval = viewModel::setTelemetryInterval,
         onKeepAlive = viewModel::setKeepAlive,
         onForgetDevice = viewModel::forgetDevice,
@@ -63,6 +64,7 @@ fun SettingsRoute(
 fun SettingsScreen(
     state: SettingsUiState,
     onSaveServerUrl: (String) -> Unit,
+    onTestConnection: () -> Unit,
     onTelemetryInterval: (Long) -> Unit,
     onKeepAlive: (Boolean) -> Unit,
     onForgetDevice: () -> Unit,
@@ -117,28 +119,34 @@ fun SettingsScreen(
 
         item {
             DroidCard {
-                SectionLabel("Server configuration")
+                SectionLabel("Supabase project")
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = serverUrl,
-                    onValueChange = { serverUrl = it },
-                    label = { Text("Backend URL") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                MetricRow("Project URL", state.cloudUrl.ifBlank { "not configured" })
+                MetricRow("Anon key", if (state.cloudConfigured) "built into this APK" else "missing")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "HTTPS is required for public servers. Local development addresses (10.0.2.2, 192.168.x.x, localhost) may use HTTP.",
+                    "Kuch daalne ki zarurat nahi — ye build me fixed hai. App isi project se seedha baat karta hai, " +
+                        "koi backend URL configure nahi karna. Neeche test se confirm kar sakte ho.",
                     style = MaterialTheme.typography.labelSmall,
                     color = DroidLinkColors.TextSecondary,
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onSaveServerUrl(serverUrl) }) { Text("Save") }
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = onTestConnection, enabled = !state.testing) {
+                        Text(if (state.testing) "Testing…" else "Test connection")
+                    }
                     AssistChip(
-                        onClick = { serverUrl = "https://api.droidlinkx.example/" },
-                        label = { Text("Example HTTPS", style = MaterialTheme.typography.labelSmall) },
+                        onClick = { serverUrl = state.cloudUrl },
+                        label = { Text("Show URL", style = MaterialTheme.typography.labelSmall) },
                         colors = AssistChipDefaults.assistChipColors(labelColor = DroidLinkColors.BrandBright),
+                    )
+                }
+                state.testResult?.let { result ->
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        result,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (result.startsWith("Connected")) DroidLinkColors.BrandBright else DroidLinkColors.Danger,
                     )
                 }
             }
