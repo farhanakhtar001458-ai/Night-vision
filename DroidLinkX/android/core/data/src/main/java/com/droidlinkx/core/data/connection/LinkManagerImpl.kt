@@ -72,6 +72,16 @@ class LinkManagerImpl @Inject constructor(
                 _status.value = LinkStatus(LinkState.Disconnected, lastError = "Device is not enrolled")
                 return
             }
+            // No signalling relay deployed (SIGNALING_URL empty): the device is still fully
+            // reachable through Supabase (PostgREST + realtime), so report a healthy cloud link
+            // instead of retrying a WebSocket that does not exist.
+            if (supabaseConfig.signalingUrl.isBlank()) {
+                if (telemetryJob?.isActive != true) {
+                    telemetryJob = scope.launch { telemetryLoop() }
+                }
+                _status.value = LinkStatus(LinkState.Authenticated)
+                return
+            }
             val session = sessionStorage.deviceSession()
             val needsFreshToken = session == null || session.expiresAtEpochMillis - System.currentTimeMillis() < FRESH_WINDOW_MILLIS
             if (needsFreshToken) {
@@ -86,16 +96,6 @@ class LinkManagerImpl @Inject constructor(
                     }
                     is com.droidlinkx.core.domain.model.Outcome.Success -> Unit
                 }
-            }
-            // No signalling relay deployed (SIGNALING_URL empty): the device is still fully
-            // reachable through Supabase (PostgREST + realtime), so report a healthy cloud link
-            // instead of retrying a WebSocket that does not exist.
-            if (supabaseConfig.signalingUrl.isBlank()) {
-                if (telemetryJob?.isActive != true) {
-                    telemetryJob = scope.launch { telemetryLoop() }
-                }
-                _status.value = LinkStatus(LinkState.Authenticated)
-                return
             }
             if (eventCollectorJob?.isActive != true) {
                 eventCollectorJob = scope.launch { collectSocketEvents() }

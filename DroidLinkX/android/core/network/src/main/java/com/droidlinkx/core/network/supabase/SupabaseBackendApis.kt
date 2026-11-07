@@ -329,20 +329,20 @@ class SupabaseOwnerApi(
 
 class SupabaseDeviceApi(
     private val functions: SupabaseFunctionsApi,
+    private val rest: SupabaseRestApi,
 ) : DeviceApi {
     override suspend fun reportStatus(deviceId: String, body: DeviceStatusRequestDto): DeviceEnvelopeDto {
-        val response = functions.updateStatus(
-            SupabaseStatusRequest(deviceId = deviceId, telemetry = body.telemetry, name = body.name),
-        )
-        if (!response.ok) throw IOException("The device status report was rejected")
-        return DeviceEnvelopeDto(
-            device = DeviceDto(
-                id = response.deviceId ?: deviceId,
-                name = body.name ?: "Android device",
-                telemetry = body.telemetry,
-                online = true,
-            ),
-        )
+        // Straight PostgREST update under row level security: the owner may touch their own device,
+        // so telemetry does not depend on a separately deployed Edge Function.
+        val patch = buildMap<String, Any?> {
+            put("telemetry", body.telemetry)
+            put("online", true)
+            put("last_seen_at", java.time.Instant.now().toString())
+            body.name?.let { put("name", it) }
+        }
+        val rows = rest.patchDevice(deviceId, patch)
+        val row = rows.firstOrNull() ?: throw IOException("The device status report was rejected")
+        return DeviceEnvelopeDto(device = row.toDto())
     }
 }
 

@@ -216,7 +216,12 @@ object NetworkModule {
             functions = ownerRetrofit.create(SupabaseFunctionsApi::class.java),
             ownerToken = { ownerTokenProvider.ownerToken() },
         ),
-        deviceApi = SupabaseDeviceApi(functions = deviceRetrofit.create(SupabaseFunctionsApi::class.java)),
+        deviceApi = SupabaseDeviceApi(
+            functions = deviceRetrofit.create(SupabaseFunctionsApi::class.java),
+            // Telemetry is a plain PostgREST update, so it must use the owner token: the RLS policy
+            // for public.devices only lets the owner (auth.uid()) write.
+            rest = ownerRetrofit.create(SupabaseRestApi::class.java),
+        ),
     )
 
     /** Owner-scoped Retrofit for Storage uploads and PostgREST reads used by the transfer engine. */
