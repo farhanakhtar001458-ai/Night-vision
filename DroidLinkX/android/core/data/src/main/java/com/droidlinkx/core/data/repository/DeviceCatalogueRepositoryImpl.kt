@@ -42,6 +42,10 @@ class DeviceCatalogueRepositoryImpl @Inject constructor(
                 is Outcome.Success -> {
                     val mapped = result.value.devices.map { it.toDomain() }
                     deviceDao.upsert(mapped.map { it.toEntity() })
+                    // The server list is authoritative: without this, devices deleted on the
+                    // server (duplicate enrolments, revoked phones) stayed in the local cache.
+                    val keep = mapped.map { it.id }
+                    if (keep.isEmpty()) deviceDao.clear() else deviceDao.deleteExcept(keep)
                     Outcome.Success(mapped)
                 }
             }

@@ -32,6 +32,11 @@ interface DeviceDao {
     @Query("DELETE FROM cached_devices WHERE id = :deviceId")
     suspend fun delete(deviceId: String)
 
+    /** Drops rows the server no longer knows about, so a deleted device cannot linger forever. */
+    @Query("DELETE FROM cached_devices WHERE id NOT IN (:keepIds)")
+    suspend fun deleteExcept(keepIds: List<String>)
+
+
     @Query("DELETE FROM cached_devices")
     suspend fun clear()
 }
