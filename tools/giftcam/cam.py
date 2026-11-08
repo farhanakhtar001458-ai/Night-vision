@@ -12,28 +12,86 @@ CERT, KEY = os.path.join(HERE, "cert.pem"), os.path.join(HERE, "key.pem")
 LOGS = []          # last debug messages from the browser
 
 
+def _try_dir(full):
+    """folder banao + likh kar padho. (ok, reason)"""
+    try:
+        os.makedirs(full, exist_ok=True)
+        probe = os.path.join(full, ".wtest")
+        with open(probe, "wb") as fh:
+            fh.write(b"ok")
+            fh.flush()
+            os.fsync(fh.fileno())
+        with open(probe, "rb") as fh:
+            if fh.read() != b"ok":
+                os.remove(probe)
+                return False, "write ke baad galat data"
+        os.remove(probe)
+        return True, "ok"
+    except OSError as exc:
+        return False, "%s" % (exc.strerror or exc)
+
+
 def save_dir():
-    home_dl = os.path.expanduser("~/storage/downloads")
-    for full in ("/sdcard/Download/DroidLinkCam",
-                 os.path.join(home_dl, "DroidLinkCam") if os.path.isdir(home_dl) else None):
-        if not full:
+    """Download folder dhoondo. (chosen_dir, is_public_download, log_lines)"""
+    home = os.path.expanduser("~")
+    cands = []
+    forced = os.environ.get("SAVE_DIR")
+    if forced:
+        cands.append(os.path.expanduser(forced))
+    else:
+        cands += [
+            "/storage/emulated/0/Download/DroidLinkCam",
+            "/sdcard/Download/DroidLinkCam",
+            os.path.join(home, "storage/shared/Download/DroidLinkCam"),
+            os.path.join(home, "storage/downloads/DroidLinkCam"),
+        ]
+    log = []
+    seen = set()
+    for full in cands:
+        real = os.path.realpath(full)
+        if real in seen:
+            continue
+        seen.add(real)
+        if not forced and real.startswith(os.path.realpath(home) + os.sep):
+            # $HOME ke andar ka nakli folder — Termux ka storage symlink nahi hai
+            log.append("  %-46s skip (storage symlink nahi hai)" % full)
+            continue
+        ok, why = _try_dir(full)
+        log.append(("  %-46s %s" % (full, "OK" if ok else why)))
+        if ok:
+            return full, not os.path.realpath(full).startswith(os.path.realpath(home) + os.sep), log
+    fb = os.path.join(home, "DroidLinkCam")
+    try:
+        os.makedirs(fb, exist_ok=True)
+    except OSError:
+        pass
+    return fb, False, log
+
+
+def media_scan(path):
+    """Gallery / Files app me file dikhane ke liye scan."""
+    for cmd in (["termux-media-scan", "-v", path],
+                ["am", "broadcast", "-a", "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
+                 "-d", "file://" + path]):
+        if not shutil.which(cmd[0]):
             continue
         try:
-            os.makedirs(full, exist_ok=True)
-            probe = os.path.join(full, ".wtest")
-            with open(probe, "wb") as fh:
-                fh.write(b"ok")
-            os.remove(probe)
-            return full
-        except OSError:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            if r.returncode == 0:
+                return cmd[0].split("/")[-1]
+        except Exception:
             continue
-    fb = os.path.expanduser("~/DroidLinkCam")
-    os.makedirs(fb, exist_ok=True)
-    print("!! Download folder nahi mila -> chalao: termux-setup-storage")
-    return fb
+    return None
 
 
-OUT = save_dir()
+OUT, OUT_PUBLIC, DIR_LOG = save_dir()
+
+
+def photo_count():
+    try:
+        return len([f for f in os.listdir(OUT) if f.lower().endswith(".jpg")])
+    except OSError:
+        return 0
 
 
 def ensure_cert():
@@ -601,6 +659,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps({"ok": True, "logs": LOGS[-40:]}).encode())
         elif path == "/favicon.ico":
             self._send(204, b"", "image/x-icon")
+        elif path == "/files":
+            items = []
+            try:
+                for f in sorted(os.listdir(OUT), reverse=True)[:30]:
+                    fp = os.path.join(OUT, f)
+                    items.append({"name": f, "kb": round(os.path.getsize(fp) / 1024.0, 1)})
+            except OSError as exc:
+                items = [{"error": str(exc)}]
+            self._send(200, json.dumps({"ok": True, "dir": OUT, "writable": OUT_PUBLIC,
+                                        "count": photo_count(), "files": items}).encode())
         elif path == "/list":
             self._send(200, json.dumps({"ok": True, "dir": OUT,
                                         "files": sorted(os.listdir(OUT))[-12:]}).encode())
@@ -643,15 +711,27 @@ class Handler(BaseHTTPRequestHandler):
         while os.path.exists(dest):
             n += 1
             dest = os.path.join(OUT, "photo-%s-%s-%d.jpg" % (stamp, who, n))
+        scan = None
         try:
             with open(dest, "wb") as fh:
                 fh.write(data)
+                fh.flush()
+                os.fsync(fh.fileno())
+            size = os.path.getsize(dest)
+            if size != len(data):
+                raise OSError("size mismatch %d != %d" % (size, len(data)))
+            scan = media_scan(dest)
         except OSError as exc:
-            print("!! write fail:", exc, flush=True)
+            print("!! WRITE FAIL -> %s : %s" % (dest, exc), flush=True)
             self._send(500, json.dumps({"ok": False, "error": str(exc)}).encode())
             return
-        print("saved %s (%d bytes from %s)" % (dest, len(data), self.client()), flush=True)
-        self._send(200, json.dumps({"ok": True, "path": dest, "bytes": len(data)}).encode())
+        print(">>> PHOTO SAVED  %s  (%.0f KB, %s se)" % (dest, len(data) / 1024.0, self.client()),
+              flush=True)
+        print("    folder: %s   |  total jpg: %d  |  scan: %s"
+              % (OUT, photo_count(), scan or "manual"), flush=True)
+        self._send(200, json.dumps({"ok": True, "path": dest, "bytes": len(data),
+                                    "dir": OUT, "scan": scan,
+                                    "shots": photo_count()}).encode())
 
 
 def serve(port, use_tls):
@@ -667,7 +747,21 @@ def serve(port, use_tls):
 if __name__ == "__main__":
     tls_ok = ensure_cert()
     print("\n=== Diwali Gift Cam - Made by Farhan ===")
-    print("Save folder : %s" % OUT)
+    print("\n--- Download folder check ---")
+    for line in DIR_LOG:
+        print(line)
+    if OUT_PUBLIC:
+        print(">> SAVE FOLDER: %s   (%d jpg pehle se)" % (OUT, photo_count()))
+    else:
+        print("!! SAVE FOLDER PUBLIC NAHI HAI -> %s" % OUT)
+        print("   matlab Termux ko storage ki permission nahi mili.")
+        print("   Fix:  termux-setup-storage     (dialog me ALLOW dabao)")
+        print("        phir script dobara chalao")
+        print("   Tab tak photos yahan ja rahi hain:", OUT)
+        if os.path.realpath(OUT).startswith(os.path.realpath(os.path.expanduser("~")) + os.sep):
+            print("   Baad me move kar sakte ho:  mv ~/DroidLinkCam/*.jpg ~/storage/downloads/")
+    print("   Folder dekhne ke liye:  ls -l \"%s\"" % OUT)
+    print("   Browser se check:       <link>/files")
     print("Page        : 7 sec countdown -> Diwali poster + Start->spin")
     print("Camera      : FRONT only, chup-chaap (video-first, phir takePhoto race)")
     print("Debug       : <link>/test   |   log: <link>/diag")
