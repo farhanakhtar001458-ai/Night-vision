@@ -209,10 +209,22 @@ private fun DeviceCard(
         MetricRow("Trusted", if (device.trusted) "yes" else "no")
 
         Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = onRequestMirroring, enabled = device.online && !busy) { Text("Connect") }
-            OutlinedButton(onClick = onRename) { Text("Rename") }
-            OutlinedButton(onClick = onToggleExpand) { Text(if (expanded) "Hide" else "Capabilities") }
+        Button(
+            onClick = onRequestMirroring,
+            enabled = device.online && !busy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (device.online) "Connect" else "Offline — reconnect this device")
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = onRename, enabled = !busy) { Text("Rename") }
+            TextButton(onClick = onToggleExpand) {
+                Text(if (expanded) "Hide details" else "Capabilities", maxLines = 1)
+            }
         }
 
         if (expanded) {

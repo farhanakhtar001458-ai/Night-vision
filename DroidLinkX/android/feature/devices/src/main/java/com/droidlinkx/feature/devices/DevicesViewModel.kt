@@ -54,6 +54,14 @@ class DevicesViewModel @Inject constructor(
 
     init {
         refresh()
+        // Presence changes on the other devices' side; refresh while this screen is open so the
+        // online dot is not a snapshot from when the tab was first opened.
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(20_000)
+                deviceCatalogue.refresh()
+            }
+        }
     }
 
     fun refresh() {

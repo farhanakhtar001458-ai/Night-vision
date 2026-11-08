@@ -11,6 +11,9 @@ import com.droidlinkx.core.domain.repository.OwnerAuthRepository
 import com.droidlinkx.core.network.api.PublicApi
 import com.droidlinkx.core.network.dto.DeviceTokenRequestDto
 import com.droidlinkx.core.network.dto.EnrollRequestDto
+import com.droidlinkx.core.network.supabase.SupabaseDeviceRow
+import com.droidlinkx.core.network.supabase.SupabaseRestApi
+import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +30,7 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
     private val ownerAuthRepository: OwnerAuthRepository,
     private val ownerApiProvider: javax.inject.Provider<com.droidlinkx.core.network.api.OwnerApi>,
     private val sessionStorage: SessionStorage,
+    private val rest: SupabaseRestApi,
 ) : DeviceRegistrationRepository {
 
     private val enrolledState = MutableStateFlow(sessionStorage.deviceCredentials()?.toEnrolledDevice())
@@ -37,6 +41,7 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
     override suspend fun registerCurrentDevice(): Outcome<EnrolledDevice> = mutex.withLock {
         sessionStorage.deviceCredentials()?.let { existing ->
             enrolledState.value = existing.toEnrolledDevice()
+            markOnline(existing.deviceId)
             return@withLock Outcome.Success(existing.toEnrolledDevice())
         }
         if (sessionStorage.ownerSession() == null) {
@@ -44,6 +49,26 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
         }
         val identity = sessionStorage.installationId()
         DroidLog.i(message = "Registering device $identity with the owner account")
+
+        // Reinstalling the app wipes the Keystore, so local credentials are gone while the server
+        // row still exists. Adopt that row instead of enrolling a duplicate for the same phone.
+        val knownDevices = runCatching { rest.devices() }.getOrNull().orEmpty()
+        val existingRow = knownDevices.adoptableRow()
+        if (existingRow != null) {
+            val adopted = SessionStorage.DeviceCredentials(
+                deviceId = existingRow.id,
+                secret = "",
+                name = existingRow.name,
+                wsUrl = "",
+                enrolledAtEpochMillis = System.currentTimeMillis(),
+            )
+            sessionStorage.saveDeviceCredentials(adopted)
+            enrolledState.value = adopted.toEnrolledDevice()
+            markOnline(existingRow.id)
+            dropStaleDuplicates(knownDevices, existingRow)
+            DroidLog.i(message = "Adopted existing device row ${existingRow.id}")
+            return@withLock Outcome.Success(adopted.toEnrolledDevice())
+        }
 
         val result = ownerAuthRepository.authorized {
             ownerApiProvider.get().enrollDevice(
@@ -73,8 +98,9 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
                 sessionStorage.saveDeviceCredentials(credentials)
                 enrolledState.value = credentials.toEnrolledDevice()
                 DroidLog.i(message = "Device enrolled as ${response.deviceId}")
+                markOnline(response.deviceId)
                 when (val session = obtainDeviceSession()) {
-                    is Outcome.Failure -> session
+                    is Outcome.Failure -> Outcome.Success(credentials.toEnrolledDevice())
                     is Outcome.Success -> Outcome.Success(credentials.toEnrolledDevice())
                 }
             }
@@ -84,6 +110,9 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
     override suspend fun obtainDeviceSession(): Outcome<Unit> {
         val credentials = sessionStorage.deviceCredentials()
             ?: return Outcome.Failure("This device is not enrolled yet", code = "NOT_ENROLLED")
+        // Without a device secret there is nothing to exchange: this install talks to Supabase with
+        // the owner token, so a device session is simply not required.
+        if (credentials.secret.isBlank()) return Outcome.Success(Unit)
         return try {
             val response = publicApi.exchangeDeviceSecret(
                 DeviceTokenRequestDto(deviceId = credentials.deviceId, deviceSecret = credentials.secret),
@@ -118,6 +147,40 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
     }
 
     override fun deviceAccessToken(): String? = sessionStorage.deviceSession()?.accessToken
+
+    /** This phone's own row, matching the hardware it runs on. */
+    private fun List<SupabaseDeviceRow>.adoptableRow(): SupabaseDeviceRow? {
+        val model = Build.MODEL?.trim().orEmpty()
+        val manufacturer = Build.MANUFACTURER?.trim().orEmpty()
+        if (model.isBlank()) return null
+        return filter { row ->
+            row.status == "active" &&
+                row.model?.trim().equals(model, ignoreCase = true) &&
+                (manufacturer.isBlank() || row.manufacturer?.trim().equals(manufacturer, ignoreCase = true))
+        }.maxByOrNull { it.createdAt }
+    }
+
+    /**
+     * Rows for the same hardware that were never seen online are leftovers from repeated enrolments
+     * of this same phone; a genuinely second device of the same model reports telemetry and is kept.
+     */
+    private suspend fun dropStaleDuplicates(rows: List<SupabaseDeviceRow>, keep: SupabaseDeviceRow) {
+        rows.asSequence()
+            .filter { it.id != keep.id }
+            .filter { it.model?.trim().equals(keep.model?.trim(), ignoreCase = true) }
+            .filter { it.lastSeenAt == null && it.telemetry.isEmpty() }
+            .forEach { stale -> runCatching { rest.deleteDevice(stale.id) } }
+    }
+
+    private suspend fun markOnline(deviceId: String) {
+        if (deviceId.isBlank()) return
+        runCatching {
+            rest.patchDevice(
+                deviceId,
+                mapOf("online" to true, "last_seen_at" to Instant.now().toString()),
+            )
+        }
+    }
 
     override val deviceSessionId: String? get() = sessionStorage.deviceSession()?.sessionId
 

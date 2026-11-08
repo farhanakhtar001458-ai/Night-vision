@@ -45,10 +45,21 @@ private val DarkScheme = darkColorScheme(
 private val LightScheme = lightColorScheme(
     primary = Color(0xFF0B8A75),
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFD3F2EA),
+    onPrimaryContainer = Color(0xFF04372F),
     secondary = Color(0xFF4652E0),
-    background = Color(0xFFF6F8FB),
+    onSecondary = Color.White,
+    tertiary = Color(0xFF9A6414),
+    background = Color(0xFFF4F6FA),
+    onBackground = Color(0xFF0B1220),
     surface = Color.White,
-    onSurface = Color(0xFF101828),
+    onSurface = Color(0xFF0B1220),
+    surfaceVariant = Color(0xFFEDF1F7),
+    onSurfaceVariant = Color(0xFF4A5568),
+    outline = Color(0xFFB9C2D0),
+    outlineVariant = Color(0xFFDDE3EC),
+    error = Color(0xFFB4232F),
+    onError = Color.White,
 )
 
 private val DroidTypography = Typography(

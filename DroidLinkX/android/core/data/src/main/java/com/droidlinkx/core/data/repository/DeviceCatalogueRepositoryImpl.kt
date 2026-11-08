@@ -108,6 +108,13 @@ class DeviceCatalogueRepositoryImpl @Inject constructor(
 
 /* ------------------------------ mapping ------------------------------ */
 
+private fun isRecentlySeen(lastSeenAt: String?): Boolean {
+    if (lastSeenAt.isNullOrBlank()) return false
+    return runCatching {
+        java.time.Instant.parse(lastSeenAt).isAfter(java.time.Instant.now().minusSeconds(300))
+    }.getOrDefault(true)
+}
+
 internal fun DeviceDto.toDomain(): Device = Device(
     id = id,
     name = name,
@@ -116,7 +123,7 @@ internal fun DeviceDto.toDomain(): Device = Device(
     androidVersion = androidVersion,
     sdkInt = sdkInt,
     appVersion = appVersion,
-    online = online,
+    online = online && isRecentlySeen(lastSeenAt),
     trusted = trusted,
     connectionQuality = connectionQuality ?: if (online) "unknown" else "offline",
     lastSeenAt = lastSeenAt,
@@ -173,7 +180,8 @@ internal fun CachedDeviceEntity.toDomain(): Device = Device(
     androidVersion = androidVersion,
     sdkInt = sdkInt,
     appVersion = appVersion,
-    online = online,
+    // The cached flag can be days old; presence is only meaningful with a fresh heartbeat.
+    online = online && isRecentlySeen(lastSeenAt),
     trusted = trusted,
     connectionQuality = connectionQuality,
     lastSeenAt = lastSeenAt,

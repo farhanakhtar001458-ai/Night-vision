@@ -47,6 +47,9 @@ interface SupabaseRestApi {
     @PATCH("rest/v1/devices?id=eq.{id}")
     suspend fun patchDevice(@Path("id") id: String, @Body body: Map<String, Any?>): List<SupabaseDeviceRow>
 
+    @DELETE("rest/v1/devices?id=eq.{id}")
+    suspend fun deleteDevice(@Path("id") id: String)
+
     @Headers("Prefer: return=representation,resolution=merge-duplicates")
     @POST("rest/v1/device_permissions")
     suspend fun upsertPermission(@Body body: SupabasePermissionRow): List<SupabasePermissionRow>
