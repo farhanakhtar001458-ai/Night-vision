@@ -80,6 +80,7 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
                     sdkInt = Build.VERSION.SDK_INT,
                     appVersion = BuildConfig.DEVICE_AGENT_VERSION,
                     platform = "android",
+                    installationId = identity,
                 ),
             )
         }
@@ -172,12 +173,22 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
             .forEach { stale -> runCatching { rest.deleteDevice(stale.id) } }
     }
 
+    /**
+     * Marks the row as alive and claims it for this installation. The unique index on
+     * (owner_id, installation_id) then makes a second row for the same install impossible; a
+     * conflict (the row already belongs to another install) is ignored on purpose.
+     */
     private suspend fun markOnline(deviceId: String) {
         if (deviceId.isBlank()) return
+        val installationId = runCatching { sessionStorage.installationId() }.getOrNull()
         runCatching {
             rest.patchDevice(
                 deviceId,
-                mapOf("online" to true, "last_seen_at" to Instant.now().toString()),
+                buildMap {
+                    put("online", true)
+                    put("last_seen_at", Instant.now().toString())
+                    if (!installationId.isNullOrBlank()) put("installation_id", installationId)
+                },
             )
         }
     }

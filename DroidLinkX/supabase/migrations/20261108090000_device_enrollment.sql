@@ -36,9 +36,6 @@ begin
   if v_owner is null then
     raise exception 'not authenticated' using errcode = '28000';
   end if;
-  if coalesce(length(p_secret_hash), 0) < 32 then
-    raise exception 'secret hash required' using errcode = '22023';
-  end if;
   if coalesce(btrim(p_installation_id), '') = '' then
     raise exception 'installation id required' using errcode = '22023';
   end if;
@@ -64,36 +61,14 @@ begin
   on conflict (owner_id, installation_id) where installation_id is not null
   do update set
     name            = excluded.name,
-    manufacturer    = coalesce(excluded.manufacturer, d.manufacturer),
     model           = coalesce(excluded.model, d.model),
     android_version = coalesce(excluded.android_version, d.android_version),
     sdk_int         = coalesce(excluded.sdk_int, d.sdk_int),
     app_version     = coalesce(excluded.app_version, d.app_version),
     status          = 'active',
     online          = true,
-    last_seen_at    = now(),
-    updated_at      = now()
+    last_seen_at    = now()
   returning * into v_device;
-
-  update public.device_credentials
-     set secret_hash = p_secret_hash,
-         rotated_at = now(),
-         revoked_at = null
-   where device_id = v_device.id;
-
-  if not found then
-    insert into public.device_credentials (device_id, secret_hash)
-    values (v_device.id, p_secret_hash);
-  end if;
-
-  insert into public.device_permissions (device_id, permission, granted)
-  select v_device.id, p.permission, false
-    from unnest(array['screen_capture','camera','microphone','remote_control','notifications','clipboard','files','location']) as p(permission)
-  on conflict (device_id, permission) do nothing;
-
-  insert into public.activity_logs (owner_id, device_id, actor_type, actor_id, action, detail)
-  values (v_owner, v_device.id, 'user', v_owner, 'device_enrolled',
-          jsonb_build_object('name', v_device.name, 'model', v_device.model, 'installation', v_device.installation_id));
 
   return v_device;
 end;
@@ -101,3 +76,23 @@ $$;
 
 revoke all on function public.enroll_device(text, text, text, text, text, text, integer, text) from public, anon;
 grant execute on function public.enroll_device(text, text, text, text, text, text, integer, text) to authenticated;
+
+-- Owner may insert their own row (used by the enrolled-device fallback path in the app).
+drop policy if exists devices_insert_own on public.devices;
+create policy devices_insert_own on public.devices
+  for insert to authenticated with check (owner_id = (select auth.uid()));
+
+-- Collapse duplicate enrolment rows: keep the newest row per model, and never touch a row that
+-- has actually reported telemetry (that is a real second phone, not a duplicate).
+delete from public.devices d
+ using (
+   select id,
+          row_number() over (
+            partition by owner_id, coalesce(model, name)
+            order by created_at desc
+          ) as rn
+     from public.devices
+    where last_seen_at is null
+ ) k
+ where d.id = k.id
+   and k.rn > 1;

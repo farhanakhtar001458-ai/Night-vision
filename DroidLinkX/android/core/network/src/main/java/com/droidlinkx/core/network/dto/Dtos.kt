@@ -108,6 +108,8 @@ data class EnrollRequestDto(
     val sdkInt: Int? = null,
     val appVersion: String? = null,
     val platform: String = "android",
+    /** Stable per-install id; the server reuses the same device row for the same install. */
+    val installationId: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
