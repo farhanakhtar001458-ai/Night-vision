@@ -157,7 +157,7 @@ class DeviceRegistrationRepositoryImpl @Inject constructor(
             row.status == "active" &&
                 row.model?.trim().equals(model, ignoreCase = true) &&
                 (manufacturer.isBlank() || row.manufacturer?.trim().equals(manufacturer, ignoreCase = true))
-        }.maxByOrNull { it.createdAt }
+        }.maxWithOrNull(compareBy { it.createdAt.orEmpty() })
     }
 
     /**
