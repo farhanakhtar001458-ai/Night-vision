@@ -49,8 +49,11 @@ class MainActivity : Activity() {
 
         btnTalk.setOnClickListener {
             if (!EdithCore.hasMic(this)) {
-                requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_MIC)
-                Toast.makeText(this, "Mic permission do, phir bolo", Toast.LENGTH_SHORT).show()
+                requestPermissions(PERMS, REQ_MIC)
+                Toast.makeText(this, "Mic + camera allow karo, phir bolo", Toast.LENGTH_LONG).show()
+            } else if (!hasCamera()) {
+                requestPermissions(PERMS, REQ_MIC)
+                EdithCore.tapListen()
             } else {
                 EdithCore.tapListen()
             }
@@ -60,12 +63,13 @@ class MainActivity : Activity() {
             val on = EdithCore.toggleAlways()
             if (on) {
                 if (!EdithCore.hasMic(this)) {
-                    requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQ_MIC)
+                    requestPermissions(PERMS, REQ_MIC)
                     Toast.makeText(this, "Pehle mic permission do", Toast.LENGTH_SHORT).show()
                 } else {
                     askNotificationPermission()
                     AssistantService.start(this)
                     Toast.makeText(this, "Always listening ON — 'Edith' bolo", Toast.LENGTH_LONG).show()
+                    EdithCore.say("E D I T H ready hai. Bolo Edith, phir apna command.")
                 }
             } else {
                 Toast.makeText(this, "Always listening OFF", Toast.LENGTH_SHORT).show()
@@ -110,6 +114,9 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 
+    private fun hasCamera(): Boolean =
+        checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
     private fun askNotificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -128,6 +135,7 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        private val PERMS = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
         private const val REQ_MIC = 101
         private const val REQ_NOTIF = 102
     }
