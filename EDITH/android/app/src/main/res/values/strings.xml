@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EDITH</string>
+    <string name="tagline">Aapki Android assistant — bolo, kaam ho jayega</string>
+    <string name="talk">🎙 BOLO</string>
+    <string name="always">Always listening: OFF</string>
+    <string name="notif_access">Notification access: OFF</string>
+    <string name="announce">Announce messages: OFF</string>
+    <string name="help">Commands dekho</string>
+    <string name="status">Ready</string>
+    <string name="reply">Bolo "Edith" ke baad apna command.</string>
+</resources>
