@@ -179,13 +179,13 @@ object CommandParser {
                 break
             }
         }
-        if (rest == null) return null
-        rest = norm(rest.replace(" ko ", " ").replace(" ko", " "))
+        val found: String = rest ?: return null
+        var cleaned: String = norm(found.replace(" ko ", " ").replace(" ko", " "))
         for (k in arrayOf("ko", "se", "par", "pe", "number", "ko call")) {
-            if (rest == k) rest = ""
-            else if (rest.startsWith(k + " ")) rest = rest.substring(k.length + 1).trim()
+            if (cleaned == k) cleaned = ""
+            else if (cleaned.startsWith(k + " ")) cleaned = cleaned.substring(k.length + 1).trim()
         }
-        return if (rest.isNullOrBlank()) null else rest
+        return if (cleaned.isBlank()) null else cleaned
     }
 
     private fun parseSend(t: String): Action.Message? {
