@@ -11,7 +11,7 @@ Full 2D motion-graphics explainer on **Jharkhand TET (J-TET)** — pattern, elig
 | `storyboard.png` | 8-frame contact sheet |
 | `thumbnail.jpg` | 1080×1920 poster / thumbnail |
 
-Videos are attached to the GitHub **release** (see repo → Releases), not committed to git.
+GitHub par file kholo → **Download** button (ya "View raw") se download karo.
 
 ## How it is built
 
