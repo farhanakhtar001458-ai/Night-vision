@@ -1,0 +1,22 @@
+{
+  "name": "science-30-motion",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio src/index.ts --host 0.0.0.0",
+    "render": "remotion render src/index.ts Science30 out/science-30.mp4",
+    "still": "remotion still src/index.ts Science30 out/still.png --frame=300"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.484",
+    "@sparticuz/chromium": "^153.0.0",
+    "music-metadata": "^12.3.5",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "remotion": "4.0.484"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "typescript": "6.0.3"
+  }
+}
