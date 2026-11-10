@@ -70,6 +70,24 @@
             android:background="#132033" />
 
         <Button
+            android:id="@+id/btnWake"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#132033"
+            android:text="Wake word: ON"
+            android:textColor="#E8F4FF" />
+
+        <Button
+            android:id="@+id/btnVoice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#132033"
+            android:text="Voice: English"
+            android:textColor="#E8F4FF" />
+
+        <Button
             android:id="@+id/btnNotif"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

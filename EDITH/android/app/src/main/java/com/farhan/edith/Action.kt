@@ -29,6 +29,9 @@ sealed class Action {
     object Airplane : Action()
     object MobileData : Action()
 
+    data class Call(val name: String) : Action()
+    data class Message(val name: String, val text: String, val whatsapp: Boolean) : Action()
+
     data class Note(val text: String) : Action()
     object ReadNotes : Action()
 

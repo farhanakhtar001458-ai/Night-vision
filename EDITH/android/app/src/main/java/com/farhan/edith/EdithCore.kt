@@ -14,6 +14,8 @@ object EdithCore {
     private const val PREFS = "edith_prefs"
     private const val KEY_ALWAYS = "always_listening"
     private const val KEY_ANNOUNCE = "announce"
+    private const val KEY_WAKE = "wake_required"
+    private const val KEY_HINDI = "hindi_voice"
 
     interface Ui {
         fun onStatus(text: String)
@@ -33,6 +35,10 @@ object EdithCore {
         private set
     var announce: Boolean = false
         private set
+    var wakeRequired: Boolean = true
+        private set
+    var hindiVoice: Boolean = false
+        private set
     var continuous: Boolean = false
         private set
     private var tapMode = false
@@ -44,6 +50,8 @@ object EdithCore {
             val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             alwaysListening = sp.getBoolean(KEY_ALWAYS, false)
             announce = sp.getBoolean(KEY_ANNOUNCE, false)
+            wakeRequired = sp.getBoolean(KEY_WAKE, true)
+            hindiVoice = sp.getBoolean(KEY_HINDI, false)
         }
         if (tts == null) {
             tts = try {
@@ -56,15 +64,21 @@ object EdithCore {
 
     private fun onTtsReady(status: Int) {
         if (status != TextToSpeech.SUCCESS) return
+        applyLanguage()
+    }
+
+    private fun applyLanguage() {
         val engine = tts ?: return
-        val res = try {
-            engine.setLanguage(Locale("en", "IN"))
+        val wanted = if (hindiVoice) Locale("hi", "IN") else Locale("en", "IN")
+        val fallback = if (hindiVoice) Locale("hi") else Locale.US
+        var res = TextToSpeech.LANG_NOT_SUPPORTED
+        try {
+            res = engine.setLanguage(wanted)
         } catch (t: Throwable) {
-            TextToSpeech.LANG_NOT_SUPPORTED
         }
         if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
             try {
-                engine.setLanguage(Locale.US)
+                engine.setLanguage(fallback)
             } catch (t: Throwable) {
             }
         }
@@ -155,8 +169,8 @@ object EdithCore {
         status("Suna: $text")
 
         val wake = CommandParser.hasWake(text)
-        if (!wake && !tapMode) {
-            // always-listening me "Edith" ke bina baat ignore
+        if (!wake && !tapMode && wakeRequired) {
+            // wake word ON hai to "Edith" ke bina baat ignore
             return
         }
         tapMode = false
@@ -191,6 +205,24 @@ object EdithCore {
             AssistantService.stop(ctx)
         }
         return alwaysListening
+    }
+
+    fun toggleWakeRequired(): Boolean {
+        val ctx = app ?: return false
+        wakeRequired = !wakeRequired
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_WAKE, wakeRequired).apply()
+        return wakeRequired
+    }
+
+    fun toggleHindiVoice(): Boolean {
+        val ctx = app ?: return false
+        hindiVoice = !hindiVoice
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_HINDI, hindiVoice).apply()
+        applyLanguage()
+        say(if (hindiVoice) "Ab main Hindi me bolungi." else "Now I will speak in English.")
+        return hindiVoice
     }
 
     fun toggleAnnounce(): Boolean {

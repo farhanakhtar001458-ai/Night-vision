@@ -15,6 +15,8 @@ class MainActivity : Activity() {
 
     private lateinit var btnTalk: Button
     private lateinit var btnAlways: Button
+    private lateinit var btnWake: Button
+    private lateinit var btnVoice: Button
     private lateinit var btnNotif: Button
     private lateinit var btnAnnounce: Button
     private lateinit var btnHelp: Button
@@ -40,6 +42,8 @@ class MainActivity : Activity() {
 
         btnTalk = findViewById(R.id.btnTalk)
         btnAlways = findViewById(R.id.btnAlways)
+        btnWake = findViewById(R.id.btnWake)
+        btnVoice = findViewById(R.id.btnVoice)
         btnNotif = findViewById(R.id.btnNotif)
         btnAnnounce = findViewById(R.id.btnAnnounce)
         btnHelp = findViewById(R.id.btnHelp)
@@ -74,6 +78,21 @@ class MainActivity : Activity() {
             } else {
                 Toast.makeText(this, "Always listening OFF", Toast.LENGTH_SHORT).show()
             }
+            refresh()
+        }
+
+        btnWake.setOnClickListener {
+            val on = EdithCore.toggleWakeRequired()
+            Toast.makeText(
+                this,
+                if (on) "Wake word ON — 'Edith' bolo" else "Wake word OFF — seedha command bolo",
+                Toast.LENGTH_LONG
+            ).show()
+            refresh()
+        }
+
+        btnVoice.setOnClickListener {
+            EdithCore.toggleHindiVoice()
             refresh()
         }
 
@@ -128,6 +147,8 @@ class MainActivity : Activity() {
     private fun refresh() {
         btnTalk.text = if (EdithCore.hasMic(this)) getString(R.string.talk) else "🎙 MIC PERMISSION DO"
         btnAlways.text = "Always listening: " + if (EdithCore.alwaysListening) "ON" else "OFF"
+        btnWake.text = "Wake word: " + if (EdithCore.wakeRequired) "ON" else "OFF (seedha bolo)"
+        btnVoice.text = "Voice: " + if (EdithCore.hindiVoice) "Hindi" else "English"
         btnNotif.text = "Notification access: " +
             if (EdithCore.notificationAccessEnabled(this)) "ON" else "OFF"
         btnAnnounce.text = "Announce messages: " + if (EdithCore.announce) "ON" else "OFF"
@@ -135,7 +156,12 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        private val PERMS = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
+        private val PERMS = arrayOf(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.CAMERA,
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.CALL_PHONE
+        )
         private const val REQ_MIC = 101
         private const val REQ_NOTIF = 102
     }

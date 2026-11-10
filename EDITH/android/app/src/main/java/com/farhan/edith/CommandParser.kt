@@ -131,6 +131,12 @@ object CommandParser {
         if (hasAny(t, "kitne baje", "time", "samay", "टाइम", "baje")) return Action.TimeNow
         if (hasAny(t, "date", "tarikh", "aaj ka din", "तारीख")) return Action.DateNow
 
+        // ---- call / message ----
+        val callTarget = parseCall(t)
+        if (callTarget != null) return Action.Call(callTarget)
+        val msg = parseSend(t)
+        if (msg != null) return msg
+
         // ---- notes ----
         if (startsAny(t, "note karo", "note", "yaad rakho", "remember")) {
             var body = t
@@ -159,6 +165,60 @@ object CommandParser {
         }
 
         return Action.None
+    }
+
+    private fun parseCall(t: String): String? {
+        if (hasAny(t, "kholo", "open", "launch")) return null
+        val triggers = arrayOf("call karo", "call kar", "phone karo", "phone kar", "call", "dial", "milao")
+        var rest: String? = null
+        for (k in triggers) {
+            if (t == k) continue
+            if (t.startsWith(k + " ")) { rest = t.substring(k.length + 1).trim(); break }
+            if (t.endsWith(" " + k) || t.contains(" " + k + " ")) {
+                rest = t.replace(k, " ").trim()
+                break
+            }
+        }
+        if (rest == null) return null
+        rest = norm(rest.replace(" ko ", " ").replace(" ko", " "))
+        for (k in arrayOf("ko", "se", "par", "pe", "number", "ko call")) {
+            if (rest == k) rest = ""
+            else if (rest.startsWith(k + " ")) rest = rest.substring(k.length + 1).trim()
+        }
+        return if (rest.isNullOrBlank()) null else rest
+    }
+
+    private fun parseSend(t: String): Action.Message? {
+        if (hasAny(t, "kholo", "open", "launch")) return null
+        if (!hasAny(t, "bhejo", "bhej", "send", "karo", "kar do", "likho")) return null
+        val whatsapp = hasAny(t, "whatsapp", "watsapp", "व्हाट्सएप")
+        val triggers = arrayOf("message bhejo", "msg bhejo", "sms bhejo", "message karo", "msg karo",
+            "text karo", "message bhej", "message", "msg", "bhejo")
+        val trigger = triggers.firstOrNull { t.contains(it) } ?: return null
+        val i = t.indexOf(trigger)
+        var rest = (t.substring(0, i) + " " + t.substring(i + trigger.length)).trim()
+        rest = rest.replace("whatsapp", " ").replace("watsapp", " ").replace("sms", " ")
+        rest = norm(rest)
+        if (rest.isEmpty()) return Action.Message("", "", whatsapp)
+        val koIdx = rest.indexOf(" ko ")
+        var name: String
+        var text: String
+        if (koIdx >= 0) {
+            name = rest.substring(0, koIdx).trim()
+            text = rest.substring(koIdx + 4).trim()
+        } else {
+            val parts = rest.split(" ").filter { it.isNotBlank() }
+            name = parts.firstOrNull() ?: ""
+            text = if (parts.size > 1) parts.drop(1).joinToString(" ") else ""
+        }
+        name = norm(name.replace(" ko", ""))
+        for (k in arrayOf("ko", "se", "par", "pe")) {
+            if (name.startsWith(k + " ")) name = name.substring(k.length + 1).trim()
+            if (name.endsWith(" " + k)) name = name.substring(0, name.length - k.length - 1).trim()
+        }
+        if (name == "ko" || name == "se") name = ""
+        if (name.isEmpty()) return null
+        return Action.Message(name, text, whatsapp)
     }
 
     private val URL_RE = Regex(

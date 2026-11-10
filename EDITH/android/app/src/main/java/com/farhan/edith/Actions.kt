@@ -1,6 +1,8 @@
 package com.farhan.edith
 
+import android.Manifest
 import android.app.SearchManager
+import android.content.pm.PackageManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -46,6 +48,9 @@ object Actions {
                 Settings.ACTION_BLUETOOTH_SETTINGS, "Bluetooth")
             Action.Airplane -> airplane(ctx)
             Action.MobileData -> mobileData(ctx)
+
+            is Action.Call -> call(ctx, action.name)
+            is Action.Message -> sendMessage(ctx, action.name, action.text, action.whatsapp)
 
             is Action.Note -> saveNote(ctx, action.text)
             Action.ReadNotes -> readNotes(ctx)
@@ -280,6 +285,88 @@ object Actions {
         }
     }
 
+    // ------------------------------------------------ call / message
+    private fun hasPerm(ctx: Context, perm: String): Boolean =
+        ctx.checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED
+
+    private fun call(ctx: Context, name: String): String {
+        val digits = name.filter { it.isDigit() || it == '+' }
+        if (digits.count { it.isDigit() } >= 4) return dial(ctx, digits, digits)
+        if (!hasPerm(ctx, Manifest.permission.READ_CONTACTS)) {
+            return "Contacts permission chahiye — app kholo aur BOLO dabao, phir Allow karo."
+        }
+        val found = Contacts.findNumber(ctx, name) ?: return "'$name' contacts me nahi mila."
+        return dial(ctx, found.second, found.first)
+    }
+
+    private fun dial(ctx: Context, number: String, label: String): String {
+        val canCall = hasPerm(ctx, Manifest.permission.CALL_PHONE)
+        val action = if (canCall) Intent.ACTION_CALL else Intent.ACTION_DIAL
+        val intent = Intent(action, Uri.parse("tel:" + Uri.encode(number)))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return try {
+            ctx.startActivity(intent)
+            if (canCall) "$label ko call kar rahi hoon." else "$label ka number dialer me daal diya — call dabao."
+        } catch (t: Throwable) {
+            "Call nahi kar payi."
+        }
+    }
+
+    private fun sendMessage(ctx: Context, name: String, text: String, whatsapp: Boolean): String {
+        if (name.isBlank()) return "Kisko message bhejna hai? Bolo — message bhejo Rahul ko kal milte hain."
+        var number: String? = null
+        var label = name
+        if (hasPerm(ctx, Manifest.permission.READ_CONTACTS)) {
+            val found = Contacts.findNumber(ctx, name)
+            if (found != null) {
+                label = found.first
+                number = found.second
+            }
+        }
+        val body = if (text.isBlank()) "" else text
+
+        if (whatsapp) {
+            val digits = (number ?: "").filter { it.isDigit() }
+            if (digits.isNotEmpty()) {
+                val url = "https://wa.me/$digits" + if (body.isBlank()) "" else "?text=" + Uri.encode(body)
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .setPackage("com.whatsapp")
+                try {
+                    ctx.startActivity(intent)
+                    return "$label ko WhatsApp message khol diya — send dabao."
+                } catch (t: Throwable) {
+                    // neeche share-sheet fallback
+                }
+            }
+            val share = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, body.ifBlank { " " })
+                setPackage("com.whatsapp")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            return try {
+                ctx.startActivity(share)
+                "WhatsApp khol diya — contact chuno, message ready hai."
+            } catch (t: Throwable) {
+                "WhatsApp installed nahi lagta."
+            }
+        }
+
+        if (number.isNullOrBlank()) {
+            return "'$name' ka number nahi mila. Contacts permission do ya poora number bolo."
+        }
+        val sms = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + number.filter { it.isDigit() || it == '+' }))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        sms.putExtra("sms_body", body)
+        return try {
+            ctx.startActivity(sms)
+            "$label ke liye message ready — send dabao."
+        } catch (t: Throwable) {
+            "Message app khol nahi payi."
+        }
+    }
+
     // ------------------------------------------------ notes
     private fun saveNote(ctx: Context, text: String): String {
         if (text.isBlank()) return "Kya note karna hai?"
@@ -304,7 +391,7 @@ object Actions {
     // ------------------------------------------------ help
     val HELP: String = "Main in cheezon me help karti hoon: " +
         "torch on off, koi bhi app kholo, Chrome, naya tab, Google search, website kholo, " +
-        "best website dhundo, WhatsApp messages padho, email padho, saari notifications padho, " +
+        "best website dhundo, call karo, message bhejo, WhatsApp messages padho, email padho, saari notifications padho, " +
         "battery, time, date, volume up down mute, WiFi Bluetooth airplane data settings, " +
         "note karo aur notes padho, aur 'stop' bolne par sunna band."
 
@@ -315,6 +402,9 @@ object Actions {
         • "Edith search best ai website"
         • "Edith google par weather search karo"
         • "Edith open flipkart.com"
+        • "Edith call Rahul" / "Rahul ko call karo"
+        • "Edith message bhejo Rahul ko kal milte hain"
+        • "Edith WhatsApp par Rahul ko message bhejo aa raha hoon"
         • "Edith WhatsApp padho"
         • "Edith email padho"
         • "Edith notifications padho"

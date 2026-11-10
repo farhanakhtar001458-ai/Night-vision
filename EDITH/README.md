@@ -11,6 +11,8 @@ Made by Farhan.
    - **Notification access** → settings me EDITH ko ON karo (WhatsApp/email padhne ke liye).
    - **Always listening** → ON (background me "Edith" sunne ke liye, notification dikhega).
    - **Announce messages** → ON (nayi WhatsApp/email khud bol ke batayegi).
+   - **Wake word: OFF** → "Edith" bole bina seedha command ("torch on") bhi chalega.
+   - **Voice: Hindi** → replies Hindi awaaz me (Hindi TTS install hona chahiye).
 
 ## Commands
 | Bolo | Kaam |
@@ -22,6 +24,9 @@ Made by Farhan.
 | Edith google par weather search karo | Google search |
 | Edith open flipkart.com | website |
 | Edith best website for news | "news official website" search |
+| Edith call Rahul / Rahul ko call karo | contact ka call |
+| Edith message bhejo Rahul ko kal milte hain | SMS ready |
+| Edith WhatsApp par Rahul ko message bhejo aa raha hoon | WhatsApp ready |
 | Edith WhatsApp padho | last 3 WhatsApp notifications bolti hai |
 | Edith email padho | Gmail/Outlook notifications |
 | Edith notifications padho | saari notifications |
@@ -37,5 +42,7 @@ Made by Farhan.
 ## Sach (limits)
 - **Airplane mode / mobile data** third-party app se toggle nahi ho sakta — Android permission block karta hai. Root ho to EDITH khud toggle kar leti hai, warna settings khol deti hai.
 - WhatsApp/email padhna **notification** se hota hai (jo screen par aata hai), chat history se nahi. Notification access ON hona chahiye.
+- Call/SMS/WhatsApp: app sirf **dialer/send screen ready** karti hai — aakhri "send" aap dabate ho (Android ki safety).
+- Wake word OFF karte ho to background me har awaaz command ban sakti hai — dhyan se use karo.
 - Always listening battery khaati hai; sirf Google app wale phones me speech recognition chalta hai.
 - Google Assistant ki tarah "Hey Google" offline hotword nahi hai — EDITH har utterance check karti hai, isliye "Edith" bolna zaroori hai.
