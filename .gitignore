@@ -25,3 +25,4 @@ Thumbs.db
 # Generated on-device diagnostic reports
 reports/device-*.json
 reports/device-*.txt
+edith-failure.log
