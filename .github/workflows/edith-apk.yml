@@ -43,6 +43,20 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon --console=plain --stacktrace :app:assembleDebug 2>&1 | tee build.log
 
+      - name: Record failure log in branch
+        if: failure()
+        run: |
+          {
+            echo "# EDITH gradle failure — $(date -u +%FT%TZ)"
+            grep -E "^e: |error:|FAILURE:|What went wrong|Caused by:|> " build.log | head -n 200
+          } > edith-failure.log
+          if [ ! -s edith-failure.log ]; then tail -n 200 build.log > edith-failure.log; fi
+          git config user.name 'edith-ci'
+          git config user.email 'ci@edith.local'
+          git add -f edith-failure.log
+          git commit -m "[skip ci] chore: edith build failure log" || true
+          git push origin HEAD:${GITHUB_REF_NAME} || true
+
       - name: Publish APK as GitHub release
         if: success()
         env:
